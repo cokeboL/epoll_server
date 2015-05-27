@@ -8,13 +8,14 @@ typedef struct Handler
 {
 	int fds[2];
 	pthread_t tid; 
-	int running;
+	bool running;
 }Handler;
 
 void start_handler();
 
 void stop_handler();
 
-extern Handler *g_handler;
+extern Handler *g_global_handlers[G_HANDLER_NUM];
+extern Handler *g_normal_handlers[N_HANDLER_NUM];
 
 #endif // _handler_h_

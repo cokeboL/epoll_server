@@ -1,6 +1,6 @@
 #include "sock.h"
 
-Sock *g_socks[0xFF] = {0};
+Sock *g_socks[MAX_CLIENTS_NUM] = {0};
 
 inline Sock *create_sock(int fd)
 {
@@ -17,6 +17,7 @@ inline void remove_sock(Sock *sock)
 	{
 		Free(sock->msg);
 	}
+	close(sock->fd);
 	g_socks[sock->fd] = 0;
 	Free(sock);
 }

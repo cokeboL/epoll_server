@@ -56,7 +56,7 @@ struct SockMsg
 	char data[0];    //消息体：去掉整个Msg的head四个字节
 };
 
-extern Sock *g_socks[0xFF];
+extern Sock *g_socks[MAX_CLIENTS_NUM];
 
 Sock *create_sock(int fd);
 

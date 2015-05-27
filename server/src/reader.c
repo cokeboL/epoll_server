@@ -7,6 +7,10 @@ Reader *g_readers[READER_NUM] = {0};
 
 static void read_data(Sock *sock)
 {
+	int pack_count = 0;
+	int curr_normal_handler_idx = 0;
+	int curr_global_handler_idx = 0;
+
 	int nread = 0;
 	while(1)
 	{
@@ -49,8 +53,22 @@ static void read_data(Sock *sock)
 
 	if(sock->len_readed == sock->len_total)
 	{
-		write(g_handler->fds[1], (char*)&sock->msg, sizeof(SockMsg*));
-
+		//实际项目应修改为根据命令号判断发给哪个处理线程，不需要处理全局资源的任务也可以丢给全局的来处理
+		pack_count++;
+		if(pack_count%2) 
+		{
+			//不需要处理全局资源的任务
+			curr_normal_handler_idx++;
+			curr_normal_handler_idx = curr_normal_handler_idx % N_HANDLER_NUM;
+			write(g_normal_handlers[curr_normal_handler_idx]->fds[1], (char*)&sock->msg, sizeof(SockMsg*));
+		}
+		else
+		{
+			//需要/不需要处理全局资源的任务都可以放到这里处理
+			curr_global_handler_idx++;
+			curr_global_handler_idx = curr_global_handler_idx % G_HANDLER_NUM;
+			write(g_global_handlers[curr_global_handler_idx]->fds[1], (char*)&sock->msg, sizeof(SockMsg*));	
+		}
 		sock->msg = 0;
 		sock->len_readed = 0;
 	}
@@ -101,7 +119,7 @@ static Reader *create_reader()
 	
 	pipe(reader->fds);
 	
-	reader->running = 1;
+	reader->running = true;
     int err = pthread_create(&reader->tid, NULL, &reader_thread, (void*)reader); //创建线程  
 
     return reader;
@@ -109,7 +127,7 @@ static Reader *create_reader()
 
 static void remove_reader(Reader *reader)
 {
-	reader->running = 0;	
+	reader->running = false;	
 }
 
 static void free_reader(Reader *reader)
@@ -121,7 +139,7 @@ static void free_reader(Reader *reader)
 
 void start_readers()
 {
-    for(int i=0; i<READER_NUM; i++)
+    for(int i = 0; i < READER_NUM; i++)
     {
         g_readers[i] = create_reader();
     }
@@ -129,7 +147,7 @@ void start_readers()
 
 void stop_readers()
 {
-    for(int i=0; i<READER_NUM; i++)
+    for(int i = 0; i < READER_NUM; i++)
     {
         remove_reader(g_readers[i]);
     }

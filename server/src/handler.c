@@ -1,7 +1,10 @@
 #include "handler.h"
 #include "writer.h"
 
-Handler *g_handler = 0;
+Handler *g_global_handlers[G_HANDLER_NUM] = {0};
+Handler *g_normal_handlers[N_HANDLER_NUM] = {0};
+//#define G_HANDLER_NUM 1
+//#define N_HANDLER_NUM 1
 
 static void free_handler(Handler *handler);
 
@@ -52,7 +55,7 @@ static Handler *create_handler()
 	
 	pipe(handler->fds);
 	
-	handler->running = 1;
+	handler->running = true;
     int err = pthread_create(&handler->tid, NULL, &handler_thread, (void*)handler); //创建线程  
 
     return handler;
@@ -60,7 +63,7 @@ static Handler *create_handler()
 
 static void remove_handler(Handler *handler)
 {
-	handler->running = 0;	
+	handler->running = false;	
 }
 
 static void free_handler(Handler *handler)
@@ -72,10 +75,25 @@ static void free_handler(Handler *handler)
 
 void start_handler()
 {
-	g_handler = create_handler();
+	for(int i = 0; i < G_HANDLER_NUM; i++)
+	{
+		g_global_handlers[i] = create_handler();
+	}
+	for(int i = 0; i < N_HANDLER_NUM; i++)
+	{
+		g_normal_handlers[i] = create_handler();
+	}
 }
 
 void stop_handler()
 {
 	remove_handler(g_handler);
+	for(int i = 0; i < G_HANDLER_NUM; i++)
+	{
+		remove_handler(g_global_handlers[i]);
+	}
+	for(int i = 0; i < N_HANDLER_NUM; i++)
+	{
+		remove_handler(g_normal_handlers[i]);
+	}
 }
