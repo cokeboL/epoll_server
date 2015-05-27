@@ -87,7 +87,6 @@ void start_handler()
 
 void stop_handler()
 {
-	remove_handler(g_handler);
 	for(int i = 0; i < G_HANDLER_NUM; i++)
 	{
 		remove_handler(g_global_handlers[i]);

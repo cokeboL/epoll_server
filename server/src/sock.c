@@ -2,11 +2,15 @@
 
 Sock *g_socks[MAX_CLIENTS_NUM] = {0};
 
+int sock_num = 0;
 inline Sock *create_sock(int fd)
 {
 	Sock *sock = (Sock*)Malloc(sizeof(Sock));
 	memset(sock, 0, sizeof(Sock));
 	sock->fd = fd;
+	
+	sock_num++;
+	printf("create_sock: %d\n", sock_num);
 
 	return sock;
 }
@@ -20,6 +24,9 @@ inline void remove_sock(Sock *sock)
 	close(sock->fd);
 	g_socks[sock->fd] = 0;
 	Free(sock);
+
+	sock_num--;
+	printf("remove_sock: %d\n", sock_num);
 }
 
 inline SockMsg *create_recv_msg(Sock *sock)

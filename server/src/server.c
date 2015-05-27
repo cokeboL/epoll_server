@@ -103,8 +103,7 @@ static void remove_server(Server *server)
 
 static void free_server(Server *server)
 {
-    close(server->fds[0]);
-    close(server->fds[1]);
+    close(server->fd);
     Free(server);   
 }
 
@@ -116,6 +115,8 @@ void start_server(const char *ip, unsigned short port)
     start_writers();
     start_handler();
 
+    int err = 0;
+
     // create a TCP socket, bind and listen
     server_sock = socket(AF_INET, SOCK_STREAM, 0);
     fcntl(server_sock, F_SETFL, O_NONBLOCK);
@@ -123,11 +124,15 @@ void start_server(const char *ip, unsigned short port)
     struct sockaddr_in addr;
     memset(&addr, 0 , sizeof(addr));
     addr.sin_family = AF_INET;
-    //addr.sin_addr.s_addr = htons(INADDR_ANY);
-    addr.sin_addr.s_addr = htons(ip);
+    addr.sin_addr.s_addr = htons(INADDR_ANY);
+    //addr.sin_addr.s_addr = htons(ip);
     addr.sin_port = htons(port);
 
-    bind(server_sock, (struct sockaddr *) &addr, sizeof(addr));
+    err = bind(server_sock, (struct sockaddr *) &addr, sizeof(addr));
+    if(err)
+    {
+	printf("bind error: %m\n"); 
+    }
 
     listen(server_sock, 10);
 
