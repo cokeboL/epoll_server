@@ -14,7 +14,7 @@
 #include <time.h>
 #include "common.h"
 
-#define socknum 5 
+#define socknum 500
 #define loopnum 100000 
 int sockfds[socknum];
 
@@ -60,23 +60,23 @@ void request_flood()
     {
 	for(int j=0; j<socknum; j++)
         {
-	    msg[2] = i;
-	    msg[3] = j;
+	    msg[2] = i%128;
+	    msg[3] = j%128;
     	    if((nread = write(sockfds[j],msg,sizeof(msg)))==-1)
 	    {
 		printf("\n** write_1**\n");
 	    }
-	    //printf("---: %d %d %s\n", msg[2], msg[3], msg+4);
+	    printf("---: %d %d %s\n", msg[2], msg[3], msg+4);
        	    int n = read(sockfds[j], msg2, sizeof(msg2));
-	    //printf("+++: %d %d %s\n", msg2[2], msg2[3], msg2+4);
-	    //usleep(1);
+	    printf("+++: %d %d %s\n", msg2[2], msg2[3], msg2+4);
+	    usleep(10);
 	    if(nread != n)
             {
 		printf("xxxxxxxxx \n");
 		return;
 	    }
 	}
-	usleep(1);
+	usleep(10);
     }
 }
 

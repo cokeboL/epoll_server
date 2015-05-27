@@ -18,6 +18,8 @@ typedef struct Sock
 	//来源
 	int fd;
 
+	int epoll_fd;
+
 	//收到数据，对方此消息的总长度
 	uint16_t len_total;
 

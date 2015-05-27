@@ -64,6 +64,7 @@ static void *server_thread(void *arg)
                     epoll_ctl(epoll_fd, EPOLL_CTL_ADD, event.data.fd, &event); //将新的fd添加到epoll的监听队列中
 
                     g_socks[sockfd] = create_sock(sockfd);
+                    g_socks[sockfd]->epoll_fd = epoll_fd;
                 }
             }
             else if(events[i].events & EPOLLIN ) //接收到数据，读socket  

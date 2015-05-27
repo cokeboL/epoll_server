@@ -1,4 +1,6 @@
+#include <sys/epoll.h>
 #include "sock.h"
+
 
 Sock *g_socks[MAX_CLIENTS_NUM] = {0};
 
@@ -21,6 +23,7 @@ inline void remove_sock(Sock *sock)
 	{
 		Free(sock->msg);
 	}
+	epoll_ctl(sock->epoll_fd, EPOLL_CTL_DEL, sock->fd, 0);
 	close(sock->fd);
 	g_socks[sock->fd] = 0;
 	Free(sock);
