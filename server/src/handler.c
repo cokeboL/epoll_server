@@ -1,19 +1,73 @@
 #include "handler.h"
-#include "writer.h"
 
-Handler *g_global_handlers[G_HANDLER_NUM] = {0};
-Handler *g_normal_handlers[N_HANDLER_NUM] = {0};
-//#define G_HANDLER_NUM 1
-//#define N_HANDLER_NUM 1
+static void free_handler(Handler*);
 
-static void free_handler(Handler *handler);
+Handler *g_handlers[HANDLER_NUM] = {0};
 
 static void handle_msg(SockMsg *msg)
 {
-	static int curr_writer = 0;
-	curr_writer++;
-	curr_writer = curr_writer % WRITER_NUM;
-	write(g_writers[curr_writer]->fds[1], (char*)&msg, sizeof(SockMsg*));
+	write(msg->sock->fd, msg->data, msg->len);
+	msg_release(msg);
+}
+
+static void read_data(Sock *sock)
+{
+	int pack_count = 0;
+	int curr_normal_handler_idx = 0;
+	int curr_global_handler_idx = 0;
+
+	int nread = 0;
+	while(1)
+	{
+		if(!sock->msg)
+		{
+			nread = read(sock->fd, sock->head+sock->len_readed, PACK_HEAD_LEN - sock->len_readed);
+			if(nread <= 0)
+			if((nread < 0) && (errno == EINTR || errno == EWOULDBLOCK || errno == EAGAIN))
+			{
+				return;
+			}
+			else if(nread == 0)
+			{
+				goto Error;
+			}
+
+			sock->len_readed += nread;
+			if(sock->len_readed >= PACK_HEAD_LEN)
+			{
+				sock->msg = create_recv_msg(sock);
+				sock->len_total = sock->msg->len-PACK_HEAD_LEN;
+				sock->len_readed = 0;
+			}
+			else
+			{
+				return;
+			}
+		}
+		nread = read(sock->fd, sock->msg->buf + sock->len_readed, sock->len_total - sock->len_readed);
+		if((nread < 0) && (errno == EINTR || errno == EWOULDBLOCK || errno == EAGAIN))
+		{
+			return;
+		}
+		else if(nread == 0)
+		{
+			goto Error;
+		}
+
+		sock->len_readed += nread;
+
+		if(sock->len_readed == sock->len_total)
+		{
+			handle_msg(sock->msg);
+			sock->msg = 0;
+			sock->len_readed = 0;
+		}
+	}
+	return;
+	//sock->setLastPackTime(time(0));
+	
+Error:
+	remove_sock(sock);
 }
 
 static void *handler_thread(void *arg)
@@ -21,13 +75,13 @@ static void *handler_thread(void *arg)
 	Handler *handler = (Handler*)arg;
 	pthread_detach(pthread_self());
 
-	SockMsg *msg;
-	int sum = 0, n = 0, p_sock_msg;
+	Sock *sock;
+	int sum = 0, n = 0, p_sock;
 	while(handler->running)
 	{
 		while(1)
 		{
-			n = read(handler->fds[0], (char*)&msg+sum, sizeof(msg)-sum);
+			n = read(handler->fds[0], (char*)&sock+sum, sizeof(sock)-sum);
 			if(n < 0)
 			{
 
@@ -36,13 +90,13 @@ static void *handler_thread(void *arg)
 			{
 				sum += n;
 			}
-			if(sum == sizeof(msg))
+			if(sum == sizeof(sock))
 			{
 				break;
 			}
 		}
-		
-		handle_msg(msg);
+		read_data(sock);
+
 		sum = 0;
 	}
 
@@ -73,26 +127,18 @@ static void free_handler(Handler *handler)
 	Free(handler);	
 }
 
-void start_handler()
+void start_handlers()
 {
-	for(int i = 0; i < G_HANDLER_NUM; i++)
-	{
-		g_global_handlers[i] = create_handler();
-	}
-	for(int i = 0; i < N_HANDLER_NUM; i++)
-	{
-		g_normal_handlers[i] = create_handler();
-	}
+    for(int i = 0; i < HANDLER_NUM; i++)
+    {
+        g_handlers[i] = create_handler();
+    }
 }
 
-void stop_handler()
+void stop_handlers()
 {
-	for(int i = 0; i < G_HANDLER_NUM; i++)
-	{
-		remove_handler(g_global_handlers[i]);
-	}
-	for(int i = 0; i < N_HANDLER_NUM; i++)
-	{
-		remove_handler(g_normal_handlers[i]);
-	}
+    for(int i = 0; i < HANDLER_NUM; i++)
+    {
+        remove_handler(g_handlers[i]);
+    }
 }

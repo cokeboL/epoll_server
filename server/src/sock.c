@@ -1,8 +1,20 @@
 #include <sys/epoll.h>
 #include "sock.h"
+#include "server.h"
 
-
+int g_max_sock_fd = 0;
 Sock *g_socks[MAX_CLIENTS_NUM] = {0};
+
+void socks_online_foreach(socks_foreach_handler handler)
+{
+    for(int i = 0; i < g_max_sock_fd; i++)
+    {
+        if(g_servers[i])
+        {
+            handler(g_servers[i]);
+        }
+    }
+}
 
 int sock_num = 0;
 inline Sock *create_sock(int fd)
@@ -10,7 +22,10 @@ inline Sock *create_sock(int fd)
 	Sock *sock = (Sock*)Malloc(sizeof(Sock));
 	memset(sock, 0, sizeof(Sock));
 	sock->fd = fd;
-	
+	sock->legal = true;
+
+	g_max_sock_fd = (g_max_sock_fd < fd) ? fd : g_max_sock_fd;
+
 	sock_num++;
 	printf("create_sock: %d\n", sock_num);
 
@@ -24,6 +39,19 @@ inline void remove_sock(Sock *sock)
 		Free(sock->msg);
 	}
 	epoll_ctl(sock->epoll_fd, EPOLL_CTL_DEL, sock->fd, 0);
+
+	if(g_max_sock_fd == sock->fd)
+	{
+		for(int i = g_max_sock_fd; i >= 0; i--)
+		{
+			if(g_socks[i])
+			{
+				g_max_sock_fd = i;
+				break;
+			}
+		}
+	}
+	
 	close(sock->fd);
 	g_socks[sock->fd] = 0;
 	Free(sock);

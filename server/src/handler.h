@@ -1,5 +1,5 @@
-#ifndef _handler_h_
-#define _handler_h_
+#ifndef _reader_h_
+#define _reader_h_
 
 #include "commen.h"
 #include "sock.h"
@@ -7,15 +7,14 @@
 typedef struct Handler
 {
 	int fds[2];
-	pthread_t tid; 
+	pthread_t tid;
 	bool running;
 }Handler;
 
-void start_handler();
+void start_handlers();
 
-void stop_handler();
+void stop_handlers();
 
-extern Handler *g_global_handlers[G_HANDLER_NUM];
-extern Handler *g_normal_handlers[N_HANDLER_NUM];
+extern Handler *g_handlers[HANDLER_NUM];
 
-#endif // _handler_h_
+#endif // _reader_h_

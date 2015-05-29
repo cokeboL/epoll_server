@@ -2,6 +2,8 @@
 #define _server_h_
 
 #include "commen.h"
+#include "sock.h"
+
 
 typedef struct Server
 {
@@ -9,6 +11,7 @@ typedef struct Server
 	pthread_t tid;
 	bool running;
 }Server;
+
 
 void start_server(const char *ip, unsigned short port);
 

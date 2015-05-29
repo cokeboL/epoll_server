@@ -16,14 +16,12 @@
 #include <errno.h>
 #include <stdlib.h>
 
-#include "commen.h"
-#include "reader.h"
-#include "writer.h"
 #include "handler.h"
 #include "server.h"
 
 
 Server *g_servers[SERVER_NUM] = {0};
+
 
 static int server_sock = 0;
 
@@ -69,9 +67,7 @@ static void *server_thread(void *arg)
             }
             else if(events[i].events & EPOLLIN ) //接收到数据，读socket  
             {
-                curr_reader++;
-                curr_reader = curr_reader % READER_NUM;
-                write(g_readers[curr_reader]->fds[1], (char*)&g_socks[events[i].data.fd], sizeof(Sock*));
+                write(g_handlers[events[i].data.fd % HANDLER_NUM]->fds[1], (char*)&g_socks[events[i].data.fd], sizeof(Sock*));
             }
             /*
             else if(events[i].events & EPOLLOUT) //有数据待发送，写socket  
@@ -112,9 +108,7 @@ void start_server(const char *ip, unsigned short port)
 {
     signal(SIGPIPE, SIG_IGN);
 
-    start_readers();
-    start_writers();
-    start_handler();
+    start_handlers();
 
     int err = 0;
 
@@ -132,14 +126,14 @@ void start_server(const char *ip, unsigned short port)
     err = bind(server_sock, (struct sockaddr *) &addr, sizeof(addr));
     if(err)
     {
-	printf("bind error: %m\n"); 
+	   printf("bind error: %m\n"); 
     }
 
     listen(server_sock, 10);
 
     Server *g_servers[SERVER_NUM] = {0};
 
-    for(int i=0; i<SERVER_NUM; i++)
+    for(int i=0; i < SERVER_NUM; i++)
     {
         g_servers[i] = create_server(server_sock);
     }
@@ -149,8 +143,7 @@ void start_server(const char *ip, unsigned short port)
 
 void stop_server()
 {
-    stop_readers();
-    stop_writers();
+    stop_handlers();
 
     close(server_sock);
 

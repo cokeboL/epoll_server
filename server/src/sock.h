@@ -58,18 +58,22 @@ struct SockMsg
 	char data[0];    //消息体：去掉整个Msg的head四个字节
 };
 
+extern int g_max_sock_fd;
 extern Sock *g_socks[MAX_CLIENTS_NUM];
 
-Sock *create_sock(int fd);
+extern Sock *create_sock(int fd);
 
-void remove_sock(Sock *sock);
+extern void remove_sock(Sock *sock);
 
-SockMsg *create_recv_msg(Sock *sock);
+extern SockMsg *create_recv_msg(Sock *sock);
 
-SockMsg *create_send_msg(Sock *sock, uint16_t len, int8_t cmd, int8_t action, char *msg);
+extern SockMsg *create_send_msg(Sock *sock, uint16_t len, int8_t cmd, int8_t action, char *msg);
 
-void msg_retain(SockMsg *msg);
+extern void msg_retain(SockMsg *msg);
 
-void msg_release(SockMsg *msg);
+extern void msg_release(SockMsg *msg);
+
+typedef void (*socks_foreach_handler)(Sock*);
+extern void socks_online_foreach(socks_foreach_handler handler);
 
 #endif // _sock_h_
