@@ -1,5 +1,5 @@
-#ifndef _safelist_h_
-#define _safelist_h_
+#ifndef _list_h_
+#define _list_h_
 
 #include <stdlib.h>
 #include <stdint.h>
@@ -15,8 +15,8 @@
 /*
 #define LIST_CREATE()
 #define LIST_INIT(list, handler)
-#define LIST_HEAD(list) (list->__head)
-#define LIST_TAIL(list) (list->__tail)
+#define LIST_HEAD(list) (list->_sl_head_)
+#define LIST_TAIL(list) (list->_sl_tail_)
 #define LIST_PUSH(list, value)
 #define LIST_REMOVE(list, node)
 #define LIST_REMOVE_IF(list, rm_if)
@@ -29,17 +29,17 @@ typedef void (*ListNodeHandler)(void *);
 
 typedef struct ListNode
 {
-struct ListNode *__pre;
-struct ListNode *__next;
-void *__data;
+	struct ListNode *_sl_pre_;
+	struct ListNode *_sl_next_;
+	void *_sl_data_;
 }ListNode;
 
 typedef struct List
 {
-ListNode *__head;
-ListNode *__tail;
-ListNodeHandler __release_handler;
-uint32_t __count;
+	ListNode *_sl_head_;
+	ListNode *_sl_tail_;
+	ListNodeHandler _sl_release_handler_;
+	uint32_t _sl_count_;
 }List;
 
 
@@ -53,22 +53,22 @@ List *__list = (list);\
 ListNodeHandler __handler = (handler);\
 if (__list)\
 {\
-__list->__head = 0; \
-__list->__tail = 0; \
-__list->__count = 0; \
-__list->__release_handler = (ListNodeHandler)__handler; \
+__list->_sl_head_ = 0; \
+__list->_sl_tail_ = 0; \
+__list->_sl_count_ = 0; \
+__list->_sl_release_handler_ = (ListNodeHandler)__handler; \
 }\
 }\
 while(0)
 
 
-#define LIST_HEAD(list) (list->__head)
+#define LIST_HEAD(list) (list->_sl_head_)
 
 
-#define LIST_TAIL(list) (list->__tail)
+#define LIST_TAIL(list) (list->_sl_tail_)
 
 
-#define LIST_SIZE(list) (list->__count)
+#define LIST_SIZE(list) (list->_sl_count_)
 
 
 #define LIST_PUSH(list, value)\
@@ -77,21 +77,21 @@ do\
 List *__list = (list);\
 void *__value = (value);\
 ListNode *__node = (ListNode*)Malloc(sizeof(ListNode)); \
-if (__list->__head)\
+if (__list->_sl_head_)\
 {\
-__node->__pre = __list->__tail; \
-__node->__next = 0; \
-__node->__data = (void*)__value; \
-__list->__tail->__next = __node; \
-__list->__tail = __node; \
+__node->_sl_pre_ = __list->_sl_tail_; \
+__node->_sl_next_ = 0; \
+__node->_sl_data_ = (void*)__value; \
+__list->_sl_tail_->_sl_next_ = __node; \
+__list->_sl_tail_ = __node; \
 }\
 else\
 {\
-__node->__data = (void*)__value; \
-__list->__head = __list->__tail = __node; \
-__node->__pre = __node->__next = 0; \
+__node->_sl_data_ = (void*)__value; \
+__list->_sl_head_ = __list->_sl_tail_ = __node; \
+__node->_sl_pre_ = __node->_sl_next_ = 0; \
 }\
-__list->__count++;\
+__list->_sl_count_++;\
 } while (0)
 
 
@@ -99,22 +99,22 @@ __list->__count++;\
 do\
 {\
 List *__list = (list);\
-if (__list->__head)\
+if (__list->_sl_head_)\
 {\
-ListNode *__tmp = __list->__tail; \
-if (__list->__tail->__pre)\
+ListNode *__tmp = __list->_sl_tail_; \
+if (__list->_sl_tail_->_sl_pre_)\
 {\
-__list->__tail = __list->__tail->__pre; \
-__list->__tail->__next = 0; \
+__list->_sl_tail_ = __list->_sl_tail_->_sl_pre_; \
+__list->_sl_tail_->_sl_next_ = 0; \
 }\
 else\
 {\
-__list->__head = __list->__head = 0;\
+__list->_sl_head_ = __list->_sl_head_ = 0;\
 }\
-__list->__release_handler ? __list->__release_handler(__tmp->__data) : 0; \
+__list->_sl_release_handler_ ? __list->_sl_release_handler_(__tmp->_sl_data_) : 0; \
 Free(__tmp); \
 }\
-__list->__count--;\
+__list->_sl_count_--;\
 } while (0)
 
 
@@ -123,36 +123,36 @@ do\
 {\
 List *__list = (list);\
 ListNode *__node = (node);\
-if (__node->__pre)\
+if (__node->_sl_pre_)\
 {\
-__node->__pre->__next = __node->__next; \
-if (__node->__next)\
+__node->_sl_pre_->_sl_next_ = __node->_sl_next_; \
+if (__node->_sl_next_)\
 {\
-__node->__next->__pre = __node->__pre; \
+__node->_sl_next_->_sl_pre_ = __node->_sl_pre_; \
 }\
 else\
 {\
-__list->__tail = __node->__pre; \
+__list->_sl_tail_ = __node->_sl_pre_; \
 }\
 }\
 else\
 {\
-__list->__head = __node->__next; \
-if (__node->__next)\
+__list->_sl_head_ = __node->_sl_next_; \
+if (__node->_sl_next_)\
 {\
-__node->__next->__pre = 0; \
+__node->_sl_next_->_sl_pre_ = 0; \
 }\
 else\
 {\
-__list->__tail = 0; \
+__list->_sl_tail_ = 0; \
 }\
 }\
-if (__list->__release_handler)\
+if (__list->_sl_release_handler_)\
 {\
-__list->__release_handler(__node->__data); \
+__list->_sl_release_handler_(__node->_sl_data_); \
 }\
 Free(__node); \
-__list->__count--;\
+__list->_sl_count_--;\
 } while (0)
 
 
@@ -160,27 +160,27 @@ __list->__count--;\
 do\
 {\
 List *__list = (list);\
-ListNode **__node = &__list->__head, *__entry; \
+ListNode **__node = &__list->_sl_head_, *__entry; \
 while (*__node)\
 {\
 __entry = *__node; \
-if (__rm_if(__entry->__data))\
+if (__rm_if(__entry->_sl_data_))\
 {\
-*__node = __entry->__next; \
-if (*__node == __list->__head)\
+*__node = __entry->_sl_next_; \
+if (*__node == __list->_sl_head_)\
 {\
-(*__node)->__pre = 0;\
+(*__node)->_sl_pre_ = 0;\
 }\
-if (__list->__release_handler)\
+if (__list->_sl_release_handler_)\
 {\
-__list->__release_handler(__entry->__data); \
+__list->_sl_release_handler_(__entry->_sl_data_); \
 }\
 Free(__entry); \
-__list->__count--;\
+__list->_sl_count_--;\
 }\
 else\
 {\
-__node = &__entry->__next; \
+__node = &__entry->_sl_next_; \
 }\
 }\
 } while (0)
@@ -191,11 +191,11 @@ do\
 {\
 List *__list = (list);\
 ListNodeHandler __handler = (handler);\
-ListNode *__tmp = __list->__head; \
+ListNode *__tmp = __list->_sl_head_; \
 while (__tmp)\
 {\
-__handler(__tmp->__data); \
-__tmp = __tmp->__next; \
+__handler(__tmp->_sl_data_); \
+__tmp = __tmp->_sl_next_; \
 }\
 } while (0)
 
@@ -205,11 +205,11 @@ do\
 {\
 List *__list = (list);\
 ListNodeHandler __handler = (handler);\
-ListNode *__tmp = __list->__tail; \
+ListNode *__tmp = __list->_sl_tail_; \
 while (__tmp)\
 {\
-__handler(__tmp->__data); \
-__tmp = __tmp->__pre; \
+__handler(__tmp->_sl_data_); \
+__tmp = __tmp->_sl_pre_; \
 }\
 } while (0)
 
@@ -218,21 +218,21 @@ __tmp = __tmp->__pre; \
 do\
 {\
 List *__list = (list);\
-ListNode *__curr = __list->__head, *__tmp;\
+ListNode *__curr = __list->_sl_head_, *__tmp;\
 while (__curr)\
 {\
-if (__list->__release_handler)\
+if (__list->_sl_release_handler_)\
 {\
-__list->__release_handler(__curr->__data); \
+__list->_sl_release_handler_(__curr->_sl_data_); \
 }\
-__tmp = __curr->__next; \
+__tmp = __curr->_sl_next_; \
 Free(__curr); \
 __curr = __tmp;\
 }\
-__list->__head = __list->__tail = 0;\
-__list->__count = 0;\
+__list->_sl_head_ = __list->_sl_tail_ = 0;\
+__list->_sl_count_ = 0;\
 Free(__list);\
 } while (0)
 
 
-#endif // _safelist_h_
+#endif // _list_h_

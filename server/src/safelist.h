@@ -16,8 +16,8 @@
 /*
 #define SAFE_LIST_CREATE()
 #define SAFE_LIST_INIT(list, handler)
-#define SAFE_LIST_HEAD(list) (list->__head)
-#define SAFE_LIST_TAIL(list) (list->__tail)
+#define SAFE_LIST_HEAD(list) (list->_sl_head_)
+#define SAFE_LIST_TAIL(list) (list->_sl_tail_)
 #define SAFE_LIST_PUSH(list, value)
 #define SAFE_LIST_REMOVE(list, node)
 #define SAFE_LIST_REMOVE_IF(list, rm_if)
@@ -30,18 +30,18 @@ typedef void (*SafeListNodeHandler)(void *);
 
 typedef struct SafeListNode
 {
-	struct SafeListNode *__pre;
-	struct SafeListNode *__next;
-	void *__data;
+	struct SafeListNode *_sl_pre_;
+	struct SafeListNode *_sl_next_;
+	void *_sl_data_;
 }SafeListNode;
 
 typedef struct SafeList
 {
-	SafeListNode *__head;
-	SafeListNode *__tail;
-	SafeListNodeHandler __release_handler;
-	mutex_t __mutex;
-	uint32_t __count;
+	SafeListNode *_sl_head_;
+	SafeListNode *_sl_tail_;
+	SafeListNodeHandler _sl_release_handler_;
+	mutex_t _sl_mutex_;
+	uint32_t _sl_count_;
 }SafeList;
 
 
@@ -55,48 +55,48 @@ SafeList *__list = (list);\
 SafeListNodeHandler __handler = (handler);\
 if (__list)\
 {\
-__list->__head = 0; \
-__list->__tail = 0; \
-__list->__count = 0; \
-__list->__release_handler = (SafeListNodeHandler)__handler; \
-mutex_init(&__list->__mutex, 0);\
+__list->_sl_head_ = 0; \
+__list->_sl_tail_ = 0; \
+__list->_sl_count_ = 0; \
+__list->_sl_release_handler_ = (SafeListNodeHandler)__handler; \
+mutex_init(&__list->_sl_mutex_, 0);\
 }\
 }\
 while(0)
 
 
-#define SAFE_LIST_HEAD(list) (list->__head)
+#define SAFE_LIST_HEAD(list) (list->_sl_head_)
 
 
-#define SAFE_LIST_TAIL(list) (list->__tail)
+#define SAFE_LIST_TAIL(list) (list->_sl_tail_)
 
 
-#define SAFE_LIST_SIZE(list) (list->__count)
+#define SAFE_LIST_SIZE(list) (list->_sl_count_)
 
 
 #define SAFE_LIST_PUSH(list, value)\
 do\
 {\
 SafeList *__list = (list);\
-void *__value = (value);\
-mutex_lock(&__list->__mutex);\
+void *_sl_value_ = (value);\
+mutex_lock(&__list->_sl_mutex_);\
 SafeListNode *__node = (SafeListNode*)Malloc(sizeof(SafeListNode)); \
-if (__list->__head)\
+if (__list->_sl_head_)\
 {\
-__node->__pre = __list->__tail; \
-__node->__next = 0; \
-__node->__data = (void*)__value; \
-__list->__tail->__next = __node; \
-__list->__tail = __node; \
+__node->_sl_pre_ = __list->_sl_tail_; \
+__node->_sl_next_ = 0; \
+__node->_sl_data_ = (void*)_sl_value_; \
+__list->_sl_tail_->_sl_next_ = __node; \
+__list->_sl_tail_ = __node; \
 }\
 else\
 {\
-__node->__data = (void*)__value; \
-__list->__head = __list->__tail = __node; \
-__node->__pre = __node->__next = 0; \
+__node->_sl_data_ = (void*)_sl_value_; \
+__list->_sl_head_ = __list->_sl_tail_ = __node; \
+__node->_sl_pre_ = __node->_sl_next_ = 0; \
 }\
-__list->__count++;\
-mutex_unlock(&__list->__mutex);\
+__list->_sl_count_++;\
+mutex_unlock(&__list->_sl_mutex_);\
 } while (0)
 
 
@@ -104,24 +104,24 @@ mutex_unlock(&__list->__mutex);\
 do\
 {\
 SafeList *__list = (list);\
-mutex_lock(&__list->__mutex);\
-if (__list->__head)\
+mutex_lock(&__list->_sl_mutex_);\
+if (__list->_sl_head_)\
 {\
-SafeListNode *__tmp = __list->__tail; \
-if (__list->__tail->__pre)\
+SafeListNode *__tmp = __list->_sl_tail_; \
+if (__list->_sl_tail_->_sl_pre_)\
 {\
-__list->__tail = __list->__tail->__pre; \
-__list->__tail->__next = 0; \
+__list->_sl_tail_ = __list->_sl_tail_->_sl_pre_; \
+__list->_sl_tail_->_sl_next_ = 0; \
 }\
 else\
 {\
-__list->__head = __list->__head = 0;\
+__list->_sl_head_ = __list->_sl_head_ = 0;\
 }\
-__list->__release_handler ? __list->__release_handler(__tmp->__data) : 0; \
+__list->_sl_release_handler_ ? __list->_sl_release_handler_(__tmp->_sl_data_) : 0; \
 Free(__tmp); \
 }\
-__list->__count--;\
-mutex_unlock(&__list->__mutex);\
+__list->_sl_count_--;\
+mutex_unlock(&__list->_sl_mutex_);\
 } while (0)
 
 
@@ -130,38 +130,38 @@ do\
 {\
 SafeList *__list = (list);\
 SafeListNode *__node = (node);\
-mutex_lock(&__list->__mutex);\
-if (__node->__pre)\
+mutex_lock(&__list->_sl_mutex_);\
+if (__node->_sl_pre_)\
 {\
-__node->__pre->__next = __node->__next; \
-if (__node->__next)\
+__node->_sl_pre_->_sl_next_ = __node->_sl_next_; \
+if (__node->_sl_next_)\
 {\
-__node->__next->__pre = __node->__pre; \
+__node->_sl_next_->_sl_pre_ = __node->_sl_pre_; \
 }\
 else\
 {\
-__list->__tail = __node->__pre; \
+__list->_sl_tail_ = __node->_sl_pre_; \
 }\
 }\
 else\
 {\
-__list->__head = __node->__next; \
-if (__node->__next)\
+__list->_sl_head_ = __node->_sl_next_; \
+if (__node->_sl_next_)\
 {\
-__node->__next->__pre = 0; \
+__node->_sl_next_->_sl_pre_ = 0; \
 }\
 else\
 {\
-__list->__tail = 0; \
+__list->_sl_tail_ = 0; \
 }\
 }\
-if (__list->__release_handler)\
+if (__list->_sl_release_handler_)\
 {\
-__list->__release_handler(__node->__data); \
+__list->_sl_release_handler_(__node->_sl_data_); \
 }\
 Free(__node); \
-__list->__count--;\
-mutex_unlock(&__list->__mutex);\
+__list->_sl_count_--;\
+mutex_unlock(&__list->_sl_mutex_);\
 } while (0)
 
 
@@ -169,31 +169,31 @@ mutex_unlock(&__list->__mutex);\
 do\
 {\
 SafeList *__list = (list);\
-mutex_lock(&__list->__mutex);\
-SafeListNode **__node = &__list->__head, *__entry; \
+mutex_lock(&__list->_sl_mutex_);\
+SafeListNode **__node = &__list->_sl_head_, *__entry; \
 while (*__node)\
 {\
 __entry = *__node; \
-if (__rm_if(__entry->__data))\
+if (__rm_if(__entry->_sl_data_))\
 {\
-*__node = __entry->__next; \
-if (*__node == __list->__head)\
+*__node = __entry->_sl_next_; \
+if (*__node == __list->_sl_head_)\
 {\
-(*__node)->__pre = 0;\
+(*__node)->_sl_pre_ = 0;\
 }\
-if (__list->__release_handler)\
+if (__list->_sl_release_handler_)\
 {\
-__list->__release_handler(__entry->__data); \
+__list->_sl_release_handler_(__entry->_sl_data_); \
 }\
 Free(__entry); \
-__list->__count--;\
+__list->_sl_count_--;\
 }\
 else\
 {\
-__node = &__entry->__next; \
+__node = &__entry->_sl_next_; \
 }\
 }\
-mutex_unlock(&__list->__mutex);\
+mutex_unlock(&__list->_sl_mutex_);\
 } while (0)
 
 
@@ -202,14 +202,14 @@ do\
 {\
 SafeList *__list = (list);\
 SafeListNodeHandler __handler = (handler);\
-mutex_lock(&__list->__mutex);\
-SafeListNode *__tmp = __list->__head; \
+mutex_lock(&__list->_sl_mutex_);\
+SafeListNode *__tmp = __list->_sl_head_; \
 while (__tmp)\
 {\
-__handler(__tmp->__data); \
-__tmp = __tmp->__next; \
+__handler(__tmp->_sl_data_); \
+__tmp = __tmp->_sl_next_; \
 }\
-mutex_unlock(&__list->__mutex);\
+mutex_unlock(&__list->_sl_mutex_);\
 } while (0)
 
 
@@ -218,14 +218,14 @@ do\
 {\
 SafeList *__list = (list);\
 SafeListNodeHandler __handler = (handler);\
-mutex_lock(&__list->__mutex);\
-SafeListNode *__tmp = __list->__tail; \
+mutex_lock(&__list->_sl_mutex_);\
+SafeListNode *__tmp = __list->_sl_tail_; \
 while (__tmp)\
 {\
-__handler(__tmp->__data); \
-__tmp = __tmp->__pre; \
+__handler(__tmp->_sl_data_); \
+__tmp = __tmp->_sl_pre_; \
 }\
-mutex_unlock(&__list->__mutex);\
+mutex_unlock(&__list->_sl_mutex_);\
 } while (0)
 
 
@@ -233,22 +233,22 @@ mutex_unlock(&__list->__mutex);\
 do\
 {\
 SafeList *__list = (list);\
-mutex_lock(&__list->__mutex);\
-SafeListNode *__curr = __list->__head, *__tmp;\
+mutex_lock(&__list->_sl_mutex_);\
+SafeListNode *__curr = __list->_sl_head_, *__tmp;\
 while (__curr)\
 {\
-if (__list->__release_handler)\
+if (__list->_sl_release_handler_)\
 {\
-__list->__release_handler(__curr->__data); \
+__list->_sl_release_handler_(__curr->_sl_data_); \
 }\
-__tmp = __curr->__next; \
+__tmp = __curr->_sl_next_; \
 Free(__curr); \
 __curr = __tmp;\
 }\
-__list->__head = __list->__tail = 0;\
-__list->__count = 0;\
+__list->_sl_head_ = __list->_sl_tail_ = 0;\
+__list->_sl_count_ = 0;\
 Free(__list);\
-mutex_unlock(&__list->__mutex);\
+mutex_unlock(&__list->_sl_mutex_);\
 } while (0)
 
 
