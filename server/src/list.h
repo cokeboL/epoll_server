@@ -15,8 +15,8 @@
 /*
 #define LIST_CREATE()
 #define LIST_INIT(list, handler)
-#define LIST_HEAD(list) (list->_sl_head_)
-#define LIST_TAIL(list) (list->_sl_tail_)
+#define LIST_HEAD(list) (list->_list_head_)
+#define LIST_TAIL(list) (list->_list_tail_)
 #define LIST_PUSH(list, value)
 #define LIST_REMOVE(list, node)
 #define LIST_REMOVE_IF(list, rm_if)
@@ -29,17 +29,17 @@ typedef void (*ListNodeHandler)(void *);
 
 typedef struct ListNode
 {
-	struct ListNode *_sl_pre_;
-	struct ListNode *_sl_next_;
-	void *_sl_data_;
+	struct ListNode *_list_pre_;
+	struct ListNode *_list_next_;
+	void *_list_data_;
 }ListNode;
 
 typedef struct List
 {
-	ListNode *_sl_head_;
-	ListNode *_sl_tail_;
-	ListNodeHandler _sl_release_handler_;
-	uint32_t _sl_count_;
+	ListNode *_list_head_;
+	ListNode *_list_tail_;
+	ListNodeHandler _list_release_handler_;
+	uint32_t _list_count_;
 }List;
 
 
@@ -49,138 +49,138 @@ typedef struct List
 #define LIST_INIT(list, handler)\
 do\
 {\
-List *__list = (list);\
-ListNodeHandler __handler = (handler);\
-if (__list)\
+List *_tmp_list = (list);\
+ListNodeHandler _tmp_handler = (handler);\
+if (_tmp_list)\
 {\
-__list->_sl_head_ = 0; \
-__list->_sl_tail_ = 0; \
-__list->_sl_count_ = 0; \
-__list->_sl_release_handler_ = (ListNodeHandler)__handler; \
+_tmp_list->_list_head_ = 0; \
+_tmp_list->_list_tail_ = 0; \
+_tmp_list->_list_count_ = 0; \
+_tmp_list->_list_release_handler_ = (ListNodeHandler)_tmp_handler; \
 }\
 }\
 while(0)
 
 
-#define LIST_HEAD(list) (list->_sl_head_)
+#define LIST_HEAD(list) (list->_list_head_)
 
 
-#define LIST_TAIL(list) (list->_sl_tail_)
+#define LIST_TAIL(list) (list->_list_tail_)
 
 
-#define LIST_SIZE(list) (list->_sl_count_)
+#define LIST_SIZE(list) (list->_list_count_)
 
 
 #define LIST_PUSH(list, value)\
 do\
 {\
-List *__list = (list);\
-void *__value = (value);\
-ListNode *__node = (ListNode*)Malloc(sizeof(ListNode)); \
-if (__list->_sl_head_)\
+List *_tmp_list = (list);\
+void *_tmp_value = (value);\
+ListNode *_tmp_node = (ListNode*)Malloc(sizeof(ListNode)); \
+if (_tmp_list->_list_head_)\
 {\
-__node->_sl_pre_ = __list->_sl_tail_; \
-__node->_sl_next_ = 0; \
-__node->_sl_data_ = (void*)__value; \
-__list->_sl_tail_->_sl_next_ = __node; \
-__list->_sl_tail_ = __node; \
+_tmp_node->_list_pre_ = _tmp_list->_list_tail_; \
+_tmp_node->_list_next_ = 0; \
+_tmp_node->_list_data_ = (void*)_tmp_value; \
+_tmp_list->_list_tail_->_list_next_ = _tmp_node; \
+_tmp_list->_list_tail_ = _tmp_node; \
 }\
 else\
 {\
-__node->_sl_data_ = (void*)__value; \
-__list->_sl_head_ = __list->_sl_tail_ = __node; \
-__node->_sl_pre_ = __node->_sl_next_ = 0; \
+_tmp_node->_list_data_ = (void*)_tmp_value; \
+_tmp_list->_list_head_ = _tmp_list->_list_tail_ = _tmp_node; \
+_tmp_node->_list_pre_ = _tmp_node->_list_next_ = 0; \
 }\
-__list->_sl_count_++;\
+_tmp_list->_list_count_++;\
 } while (0)
 
 
 #define LIST_POP(list)\
 do\
 {\
-List *__list = (list);\
-if (__list->_sl_head_)\
+List *_tmp_list = (list);\
+if (_tmp_list->_list_head_)\
 {\
-ListNode *__tmp = __list->_sl_tail_; \
-if (__list->_sl_tail_->_sl_pre_)\
+ListNode *_tmp_tmp = _tmp_list->_list_tail_; \
+if (_tmp_list->_list_tail_->_list_pre_)\
 {\
-__list->_sl_tail_ = __list->_sl_tail_->_sl_pre_; \
-__list->_sl_tail_->_sl_next_ = 0; \
+_tmp_list->_list_tail_ = _tmp_list->_list_tail_->_list_pre_; \
+_tmp_list->_list_tail_->_list_next_ = 0; \
 }\
 else\
 {\
-__list->_sl_head_ = __list->_sl_head_ = 0;\
+_tmp_list->_list_head_ = _tmp_list->_list_head_ = 0;\
 }\
-__list->_sl_release_handler_ ? __list->_sl_release_handler_(__tmp->_sl_data_) : 0; \
-Free(__tmp); \
+_tmp_list->_list_release_handler_ ? _tmp_list->_list_release_handler_(_tmp_tmp->_list_data_) : 0; \
+Free(_tmp_tmp); \
 }\
-__list->_sl_count_--;\
+_tmp_list->_list_count_--;\
 } while (0)
 
 
 #define LIST_REMOVE(list, node)\
 do\
 {\
-List *__list = (list);\
-ListNode *__node = (node);\
-if (__node->_sl_pre_)\
+List *_tmp_list = (list);\
+ListNode *_tmp_node = (node);\
+if (_tmp_node->_list_pre_)\
 {\
-__node->_sl_pre_->_sl_next_ = __node->_sl_next_; \
-if (__node->_sl_next_)\
+_tmp_node->_list_pre_->_list_next_ = _tmp_node->_list_next_; \
+if (_tmp_node->_list_next_)\
 {\
-__node->_sl_next_->_sl_pre_ = __node->_sl_pre_; \
+_tmp_node->_list_next_->_list_pre_ = _tmp_node->_list_pre_; \
 }\
 else\
 {\
-__list->_sl_tail_ = __node->_sl_pre_; \
+_tmp_list->_list_tail_ = _tmp_node->_list_pre_; \
 }\
 }\
 else\
 {\
-__list->_sl_head_ = __node->_sl_next_; \
-if (__node->_sl_next_)\
+_tmp_list->_list_head_ = _tmp_node->_list_next_; \
+if (_tmp_node->_list_next_)\
 {\
-__node->_sl_next_->_sl_pre_ = 0; \
+_tmp_node->_list_next_->_list_pre_ = 0; \
 }\
 else\
 {\
-__list->_sl_tail_ = 0; \
+_tmp_list->_list_tail_ = 0; \
 }\
 }\
-if (__list->_sl_release_handler_)\
+if (_tmp_list->_list_release_handler_)\
 {\
-__list->_sl_release_handler_(__node->_sl_data_); \
+_tmp_list->_list_release_handler_(_tmp_node->_list_data_); \
 }\
-Free(__node); \
-__list->_sl_count_--;\
+Free(_tmp_node); \
+_tmp_list->_list_count_--;\
 } while (0)
 
 
-#define LIST_REMOVE_IF(list, __rm_if)\
+#define LIST_REMOVE_IF(list, _tmp_rm_if)\
 do\
 {\
-List *__list = (list);\
-ListNode **__node = &__list->_sl_head_, *__entry; \
-while (*__node)\
+List *_tmp_list = (list);\
+ListNode **_tmp_node = &_tmp_list->_list_head_, *_tmp_entry; \
+while (*_tmp_node)\
 {\
-__entry = *__node; \
-if (__rm_if(__entry->_sl_data_))\
+_tmp_entry = *_tmp_node; \
+if (_tmp_rm_if(_tmp_entry->_list_data_))\
 {\
-*__node = __entry->_sl_next_; \
-if (*__node == __list->_sl_head_)\
+*_tmp_node = _tmp_entry->_list_next_; \
+if (*_tmp_node == _tmp_list->_list_head_)\
 {\
-(*__node)->_sl_pre_ = 0;\
+(*_tmp_node)->_list_pre_ = 0;\
 }\
-if (__list->_sl_release_handler_)\
+if (_tmp_list->_list_release_handler_)\
 {\
-__list->_sl_release_handler_(__entry->_sl_data_); \
+_tmp_list->_list_release_handler_(_tmp_entry->_list_data_); \
 }\
-Free(__entry); \
-__list->_sl_count_--;\
+Free(_tmp_entry); \
+_tmp_list->_list_count_--;\
 }\
 else\
 {\
-__node = &__entry->_sl_next_; \
+_tmp_node = &_tmp_entry->_list_next_; \
 }\
 }\
 } while (0)
@@ -189,13 +189,13 @@ __node = &__entry->_sl_next_; \
 #define LIST_TRAVERSE(list, handler)\
 do\
 {\
-List *__list = (list);\
-ListNodeHandler __handler = (handler);\
-ListNode *__tmp = __list->_sl_head_; \
-while (__tmp)\
+List *_tmp_list = (list);\
+ListNodeHandler _tmp_handler = (handler);\
+ListNode *_tmp_tmp = _tmp_list->_list_head_; \
+while (_tmp_tmp)\
 {\
-__handler(__tmp->_sl_data_); \
-__tmp = __tmp->_sl_next_; \
+_tmp_handler(_tmp_tmp->_list_data_); \
+_tmp_tmp = _tmp_tmp->_list_next_; \
 }\
 } while (0)
 
@@ -203,13 +203,13 @@ __tmp = __tmp->_sl_next_; \
 #define LIST_TRAVERSE2(list, handler)\
 do\
 {\
-List *__list = (list);\
-ListNodeHandler __handler = (handler);\
-ListNode *__tmp = __list->_sl_tail_; \
-while (__tmp)\
+List *_tmp_list = (list);\
+ListNodeHandler _tmp_handler = (handler);\
+ListNode *_tmp_tmp = _tmp_list->_list_tail_; \
+while (_tmp_tmp)\
 {\
-__handler(__tmp->_sl_data_); \
-__tmp = __tmp->_sl_pre_; \
+_tmp_handler(_tmp_tmp->_list_data_); \
+_tmp_tmp = _tmp_tmp->_list_pre_; \
 }\
 } while (0)
 
@@ -217,21 +217,21 @@ __tmp = __tmp->_sl_pre_; \
 #define LIST_DESTROY(list)\
 do\
 {\
-List *__list = (list);\
-ListNode *__curr = __list->_sl_head_, *__tmp;\
-while (__curr)\
+List *_tmp_list = (list);\
+ListNode *_tmp_curr = _tmp_list->_list_head_, *_tmp_tmp;\
+while (_tmp_curr)\
 {\
-if (__list->_sl_release_handler_)\
+if (_tmp_list->_list_release_handler_)\
 {\
-__list->_sl_release_handler_(__curr->_sl_data_); \
+_tmp_list->_list_release_handler_(_tmp_curr->_list_data_); \
 }\
-__tmp = __curr->_sl_next_; \
-Free(__curr); \
-__curr = __tmp;\
+_tmp_tmp = _tmp_curr->_list_next_; \
+Free(_tmp_curr); \
+_tmp_curr = _tmp_tmp;\
 }\
-__list->_sl_head_ = __list->_sl_tail_ = 0;\
-__list->_sl_count_ = 0;\
-Free(__list);\
+_tmp_list->_list_head_ = _tmp_list->_list_tail_ = 0;\
+_tmp_list->_list_count_ = 0;\
+Free(_tmp_list);\
 } while (0)
 
 

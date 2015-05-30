@@ -79,11 +79,11 @@ int main()
 	LIST_REMOVE_IF(list2, rm);
 	LIST_TRAVERSE(list2, print);
 	printf("**********\n");
-	printf("head: %d\n", (int)list2->_sl_head_->_sl_data_);
-	printf("head: %p %p\n", list2->_sl_head_->_sl_pre_, list2->_sl_head_->_sl_next_);
-	LIST_REMOVE(list, list2->_sl_head_);
-	printf("tail: %d\n", (int)list2->_sl_tail_->_sl_data_);
-	printf("tail: %p %p\n", list2->_sl_tail_->_sl_pre_, list2->_sl_tail_->_sl_next_);
+	printf("head: %d\n", (int)list2->_list_head_->_list_data_);
+	printf("head: %p %p\n", list2->_list_head_->_list_pre_, list2->_list_head_->_list_next_);
+	LIST_REMOVE(list, list2->_list_head_);
+	printf("tail: %d\n", (int)list2->_list_tail_->_list_data_);
+	printf("tail: %p %p\n", list2->_list_tail_->_list_pre_, list2->_list_tail_->_list_next_);
 	printf("**********\n");
 	LIST_TRAVERSE(list2, print);
 	printf("**********\n");
