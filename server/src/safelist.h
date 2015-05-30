@@ -247,8 +247,8 @@ _tmp_curr = _tmp_tmp;\
 }\
 _tmp_list->_sl_head_ = _tmp_list->_sl_tail_ = 0;\
 _tmp_list->_sl_count_ = 0;\
-Free(_tmp_list);\
 mutex_unlock(&_tmp_list->_sl_mutex_);\
+Free(_tmp_list);\
 } while (0)
 
 
