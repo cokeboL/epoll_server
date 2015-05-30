@@ -14,16 +14,16 @@
 
 
 /*
-#define LIST_CREATE()
-#define LIST_INIT(list, handler)
-#define LIST_HEAD(list) (list->head)
-#define LIST_TAIL(list) (list->tail)
-#define LIST_PUSH(list, value)
-#define LIST_REMOVE(list, node)
-#define LIST_REMOVE_IF(list, rm_if)
-#define LIST_TRAVERSE(list, handler)
-#define LIST_TRAVERSE2(list, handler)
-#define LIST_DESTROY(list)
+#define SAFE_LIST_CREATE()
+#define SAFE_LIST_INIT(list, handler)
+#define SAFE_LIST_HEAD(list) (list->head)
+#define SAFE_LIST_TAIL(list) (list->tail)
+#define SAFE_LIST_PUSH(list, value)
+#define SAFE_LIST_REMOVE(list, node)
+#define SAFE_LIST_REMOVE_IF(list, rm_if)
+#define SAFE_LIST_TRAVERSE(list, handler)
+#define SAFE_LIST_TRAVERSE2(list, handler)
+#define SAFE_LIST_DESTROY(list)
 */
 
 typedef void(*ListNodeHandler)(void *);
@@ -45,10 +45,10 @@ uint32_t count;
 }List;
 
 
-#define LIST_CREATE() (List*)Malloc(sizeof(List))
+#define SAFE_LIST_CREATE() (List*)Malloc(sizeof(List))
 
 
-#define LIST_INIT(list, handler)\
+#define SAFE_LIST_INIT(list, handler)\
 do\
 {\
 if (list)\
@@ -62,13 +62,13 @@ mutex_init(&list->mutex, 0);\
 }\
 while(0)
 
-#define LIST_HEAD(list) (list->head)
+#define SAFE_LIST_HEAD(list) (list->head)
 
 
-#define LIST_TAIL(list) (list->tail)
+#define SAFE_LIST_TAIL(list) (list->tail)
 
 
-#define LIST_PUSH(list, value)\
+#define SAFE_LIST_PUSH(list, value)\
 do\
 {\
 mutex_lock(&list->mutex);\
@@ -93,7 +93,7 @@ mutex_unlock(&list->mutex);\
 } while (0)
 
 
-#define LIST_POP(list)\
+#define SAFE_LIST_POP(list)\
 do\
 {\
 mutex_lock(&list->mutex);\
@@ -117,7 +117,7 @@ mutex_unlock(&list->mutex);\
 } while (0)
 
 
-#define LIST_REMOVE(list, node)\
+#define SAFE_LIST_REMOVE(list, node)\
 do\
 {\
 mutex_lock(&list->mutex);\
@@ -156,7 +156,7 @@ mutex_unlock(&list->mutex);\
 } while (0)
 
 
-#define LIST_REMOVE_IF(list, rm_if)\
+#define SAFE_LIST_REMOVE_IF(list, rm_if)\
 do\
 {\
 mutex_lock(&list->mutex);\
@@ -187,7 +187,7 @@ mutex_unlock(&list->mutex);\
 } while (0)
 
 
-#define LIST_TRAVERSE(list, handler)\
+#define SAFE_LIST_TRAVERSE(list, handler)\
 do\
 {\
 mutex_lock(&list->mutex);\
@@ -201,7 +201,7 @@ mutex_unlock(&list->mutex);\
 } while (0)
 
 
-#define LIST_TRAVERSE2(list, handler)\
+#define SAFE_LIST_TRAVERSE2(list, handler)\
 do\
 {\
 mutex_lock(&list->mutex);\
@@ -215,7 +215,7 @@ mutex_unlock(&list->mutex);\
 } while (0)
 
 
-#define LIST_DESTROY(list)\
+#define SAFE_LIST_DESTROY(list)\
 do\
 {\
 mutex_lock(&list->mutex);\
@@ -234,5 +234,6 @@ list->head = list->tail = 0;\
 list->count = 0;\
 mutex_unlock(&list->mutex);\
 } while (0)
+
 
 #endif // _safelist_h_
