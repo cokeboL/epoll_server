@@ -26,39 +26,39 @@
 #define SAFE_LIST_DESTROY(list)
 */
 
-typedef void (*ListNodeHandler)(void *);
+typedef void (*SafeListNodeHandler)(void *);
 
-typedef struct ListNode
+typedef struct SafeListNode
 {
-	struct ListNode *__pre;
-	struct ListNode *__next;
+	struct SafeListNode *__pre;
+	struct SafeListNode *__next;
 	void *__data;
-}ListNode;
+}SafeListNode;
 
-typedef struct List
+typedef struct SafeList
 {
-	ListNode *__head;
-	ListNode *__tail;
-	ListNodeHandler __release_handler;
+	SafeListNode *__head;
+	SafeListNode *__tail;
+	SafeListNodeHandler __release_handler;
 	mutex_t __mutex;
 	uint32_t __count;
-}List;
+}SafeList;
 
 
-#define SAFE_LIST_CREATE() (List*)Malloc(sizeof(List))
+#define SAFE_LIST_CREATE() (SafeList*)Malloc(sizeof(SafeList))
 
 
 #define SAFE_LIST_INIT(list, handler)\
 do\
 {\
-List *__list = (list);\
-ListNodeHandler __handler = (handler);\
+SafeList *__list = (list);\
+SafeListNodeHandler __handler = (handler);\
 if (__list)\
 {\
 __list->__head = 0; \
 __list->__tail = 0; \
 __list->__count = 0; \
-__list->__release_handler = (ListNodeHandler)__handler; \
+__list->__release_handler = (SafeListNodeHandler)__handler; \
 mutex_init(&__list->__mutex, 0);\
 }\
 }\
@@ -77,10 +77,10 @@ while(0)
 #define SAFE_LIST_PUSH(list, value)\
 do\
 {\
-List *__list = (list);\
+SafeList *__list = (list);\
 void *__value = (value);\
 mutex_lock(&__list->__mutex);\
-ListNode *__node = (ListNode*)Malloc(sizeof(ListNode)); \
+SafeListNode *__node = (SafeListNode*)Malloc(sizeof(SafeListNode)); \
 if (__list->__head)\
 {\
 __node->__pre = __list->__tail; \
@@ -103,11 +103,11 @@ mutex_unlock(&__list->__mutex);\
 #define SAFE_LIST_POP(list)\
 do\
 {\
-List *__list = (list);\
+SafeList *__list = (list);\
 mutex_lock(&__list->__mutex);\
 if (__list->__head)\
 {\
-ListNode *__tmp = __list->__tail; \
+SafeListNode *__tmp = __list->__tail; \
 if (__list->__tail->__pre)\
 {\
 __list->__tail = __list->__tail->__pre; \
@@ -128,8 +128,8 @@ mutex_unlock(&__list->__mutex);\
 #define SAFE_LIST_REMOVE(list, node)\
 do\
 {\
-List *__list = (list);\
-ListNode *__node = (node);\
+SafeList *__list = (list);\
+SafeListNode *__node = (node);\
 mutex_lock(&__list->__mutex);\
 if (__node->__pre)\
 {\
@@ -168,9 +168,9 @@ mutex_unlock(&__list->__mutex);\
 #define SAFE_LIST_REMOVE_IF(list, __rm_if)\
 do\
 {\
-List *__list = (list);\
+SafeList *__list = (list);\
 mutex_lock(&__list->__mutex);\
-ListNode **__node = &__list->__head, *__entry; \
+SafeListNode **__node = &__list->__head, *__entry; \
 while (*__node)\
 {\
 __entry = *__node; \
@@ -200,10 +200,10 @@ mutex_unlock(&__list->__mutex);\
 #define SAFE_LIST_TRAVERSE(list, handler)\
 do\
 {\
-List *__list = (list);\
-ListNodeHandler __handler = (handler);\
+SafeList *__list = (list);\
+SafeListNodeHandler __handler = (handler);\
 mutex_lock(&__list->__mutex);\
-ListNode *__tmp = __list->__head; \
+SafeListNode *__tmp = __list->__head; \
 while (__tmp)\
 {\
 __handler(__tmp->__data); \
@@ -216,10 +216,10 @@ mutex_unlock(&__list->__mutex);\
 #define SAFE_LIST_TRAVERSE2(list, handler)\
 do\
 {\
-List *__list = (list);\
-ListNodeHandler __handler = (handler);\
+SafeList *__list = (list);\
+SafeListNodeHandler __handler = (handler);\
 mutex_lock(&__list->__mutex);\
-ListNode *__tmp = __list->__tail; \
+SafeListNode *__tmp = __list->__tail; \
 while (__tmp)\
 {\
 __handler(__tmp->__data); \
@@ -232,9 +232,9 @@ mutex_unlock(&__list->__mutex);\
 #define SAFE_LIST_DESTROY(list)\
 do\
 {\
-List *__list = (list);\
+SafeList *__list = (list);\
 mutex_lock(&__list->__mutex);\
-ListNode *__curr = __list->__head, *__tmp;\
+SafeListNode *__curr = __list->__head, *__tmp;\
 while (__curr)\
 {\
 if (__list->__release_handler)\

@@ -29,18 +29,13 @@ int rm(void *data)
 }
 int main()
 {
-	List *list = SAFE_LIST_CREATE();
+	SafeList *list = SAFE_LIST_CREATE();
 	SAFE_LIST_INIT(list, release);
 
-	ListNode *p = 0;
 	int i = 0;
 	for (i = 1; i<11; i++)
 	{
 		SAFE_LIST_PUSH(list, i);
-		if (i == 3)
-		{
-			p = list->__tail;
-		}
 	}
 	
 	SAFE_LIST_TRAVERSE(list, print);
