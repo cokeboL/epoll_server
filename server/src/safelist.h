@@ -1,8 +1,9 @@
-#ifndef _list_h_
-#define _list_h_
+#ifndef _safelist_h_
+#define _safelist_h_
 
 #include <stdlib.h>
 #include <stdint.h>
+#include "mutex.h"
 
 #ifndef Malloc
 #define Malloc malloc
@@ -10,6 +11,7 @@
 #ifndef Free
 #define Free free
 #endif
+
 
 /*
 #define LIST_CREATE()
@@ -38,8 +40,10 @@ typedef struct List
 ListNode *head;
 ListNode *tail;
 ListNodeHandler release_handler;
+mutex_t mutex;
 uint32_t count;
 }List;
+
 
 #define LIST_CREATE() (List*)Malloc(sizeof(List))
 
@@ -51,6 +55,7 @@ list->head = 0; \
 list->tail = 0; \
 list->count = 0; \
 list->release_handler = (ListNodeHandler)handler; \
+mutex_init(&list->mutex);
 }
 
 #define LIST_HEAD(list) (list->head)
@@ -62,6 +67,7 @@ list->release_handler = (ListNodeHandler)handler; \
 #define LIST_PUSH(list, value)\
 do\
 {\
+mutex_lock(&list->mutex);\
 if (list->head)\
 {\
 ListNode *node = (ListNode*)Malloc(sizeof(ListNode)); \
@@ -79,12 +85,14 @@ list->head = list->tail = node; \
 node->pre = node->next = 0; \
 }\
 list->count++;\
+mutex_unlock(&list->mutex);\
 } while (0)
 
 
 #define LIST_POP(list)\
 do\
 {\
+mutex_lock(&list->mutex);\
 if (list->head)\
 {\
 ListNode *tmp = list->tail; \
@@ -101,12 +109,14 @@ list->release_handler ? list->release_handler(tmp->data) : 0; \
 Free(tmp); \
 }\
 list->count--;\
+mutex_unlock(&list->mutex);\
 } while (0)
 
 
 #define LIST_REMOVE(list, node)\
 do\
 {\
+mutex_lock(&list->mutex);\
 ListNode *tmp = node; \
 if (tmp->pre)\
 {\
@@ -138,12 +148,14 @@ list->release_handler(tmp->data); \
 }\
 Free(tmp); \
 list->count--;\
+mutex_unlock(&list->mutex);\
 } while (0)
 
 
 #define LIST_REMOVE_IF(list, rm_if)\
 do\
 {\
+mutex_lock(&list->mutex);\
 ListNode **node = &list->head, *entry; \
 while (*node)\
 {\
@@ -167,36 +179,42 @@ else\
 node = &entry->next; \
 }\
 }\
+mutex_unlock(&list->mutex);\
 } while (0)
 
 
 #define LIST_TRAVERSE(list, handler)\
 do\
 {\
+mutex_lock(&list->mutex);\
 ListNode *tmp = list->head; \
 while (tmp)\
 {\
 handler(tmp->data); \
 tmp = tmp->next; \
 }\
+mutex_unlock(&list->mutex);\
 } while (0)
 
 
 #define LIST_TRAVERSE2(list, handler)\
 do\
 {\
+mutex_lock(&list->mutex);\
 ListNode *tmp = list->tail; \
 while (tmp)\
 {\
 handler(tmp->data); \
 tmp = tmp->pre; \
 }\
+mutex_unlock(&list->mutex);\
 } while (0)
 
 
 #define LIST_DESTROY(list)\
 do\
 {\
+mutex_lock(&list->mutex);\
 ListNode *curr = list->head, *tmp;\
 while (curr)\
 {\
@@ -210,6 +228,7 @@ curr = tmp;\
 }\
 list->head = list->tail = 0;\
 list->count = 0;\
+mutex_unlock(&list->mutex);\
 } while (0)
 
-#endif // _list_h_
+#endif // _safelist_h_
