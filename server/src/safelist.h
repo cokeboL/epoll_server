@@ -49,14 +49,18 @@ uint32_t count;
 
 
 #define LIST_INIT(list, handler)\
+do\
+{\
 if (list)\
 {\
 list->head = 0; \
 list->tail = 0; \
 list->count = 0; \
 list->release_handler = (ListNodeHandler)handler; \
-mutex_init(&list->mutex);
-}
+mutex_init(&list->mutex, 0);\
+}\
+}\
+while(0)
 
 #define LIST_HEAD(list) (list->head)
 
