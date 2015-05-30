@@ -1,4 +1,4 @@
-#include "list.h"
+#include "safelist.h"
 #include <stdio.h>
 
 /*
@@ -29,44 +29,44 @@ int rm(void *data)
 }
 int main()
 {
-	List *list = LIST_CREATE();
-	LIST_INIT(list, release);
+	List *list = SAFE_LIST_CREATE();
+	SAFE_LIST_INIT(list, release);
 
 	ListNode *p = 0;
 	int i = 0;
 	for (i = 1; i<11; i++)
 	{
-		LIST_PUSH(list, i);
+		SAFE_LIST_PUSH(list, i);
 		if (i == 3)
 		{
-			p = list->tail;
+			p = list->__tail;
 		}
 	}
 	
-	LIST_TRAVERSE(list, print);
+	SAFE_LIST_TRAVERSE(list, print);
 	printf("**********\n");
-	LIST_REMOVE_IF(list, rm);
-	LIST_TRAVERSE(list, print);
+	SAFE_LIST_REMOVE_IF(list, rm);
+	SAFE_LIST_TRAVERSE(list, print);
 	printf("**********\n");
-	printf("head: %d\n", (int)list->head->data);
-	printf("head: %p %p\n", list->head->pre, list->head->next);
-	LIST_REMOVE(list, list->head);
-	printf("tail: %d\n", (int)list->tail->data);
-	printf("tail: %p %p\n", list->tail->pre, list->tail->next);
+	printf("head: %d\n", (int)list->__head->__data);
+	printf("head: %p %p\n", list->__head->__pre, list->__head->__next);
+	SAFE_LIST_REMOVE(list, list->__head);
+	printf("tail: %d\n", (int)list->__tail->__data);
+	printf("tail: %p %p\n", list->__tail->__pre, list->__tail->__next);
 	printf("**********\n");
-	LIST_TRAVERSE(list, print);
+	SAFE_LIST_TRAVERSE(list, print);
 	printf("**********\n");
 	for (i = 1; i<11; i++)
 	{
-		LIST_PUSH(list, i);
+		SAFE_LIST_PUSH(list, i);
 		if (i == 3)
 		{
-			p = list->tail;
+			p = list->__tail;
 		}
 	}
-	LIST_TRAVERSE(list, print);
-	LIST_DESTROY(list);
+	SAFE_LIST_TRAVERSE(list, print);
+	SAFE_LIST_DESTROY(list);
 	printf("**********\n");
-	LIST_TRAVERSE(list, print);
+	SAFE_LIST_TRAVERSE(list, print);
 	getchar();
 }

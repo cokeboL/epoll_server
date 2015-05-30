@@ -1,5 +1,5 @@
-#ifndef _list_h_
-#define _list_h_
+#ifndef _safelist_h_
+#define _safelist_h_
 
 #include <stdlib.h>
 #include <stdint.h>
@@ -11,11 +11,12 @@
 #define Free free
 #endif
 
+
 /*
 #define LIST_CREATE()
 #define LIST_INIT(list, handler)
-#define LIST_HEAD(list) (list->head)
-#define LIST_TAIL(list) (list->tail)
+#define LIST_HEAD(list) (list->__head)
+#define LIST_TAIL(list) (list->__tail)
 #define LIST_PUSH(list, value)
 #define LIST_REMOVE(list, node)
 #define LIST_REMOVE_IF(list, rm_if)
@@ -24,147 +25,162 @@
 #define LIST_DESTROY(list)
 */
 
-typedef void(*ListNodeHandler)(void *);
+typedef void (*ListNodeHandler)(void *);
 
 typedef struct ListNode
 {
-struct ListNode *pre;
-struct ListNode *next;
-void *data;
+struct ListNode *__pre;
+struct ListNode *__next;
+void *__data;
 }ListNode;
 
 typedef struct List
 {
-ListNode *head;
-ListNode *tail;
-ListNodeHandler release_handler;
-uint32_t count;
+ListNode *__head;
+ListNode *__tail;
+ListNodeHandler __release_handler;
+uint32_t __count;
 }List;
+
 
 #define LIST_CREATE() (List*)Malloc(sizeof(List))
 
 
 #define LIST_INIT(list, handler)\
-if (list)\
+do\
 {\
-list->head = 0; \
-list->tail = 0; \
-list->count = 0; \
-list->release_handler = (ListNodeHandler)handler; \
-}
+List *__list = (list);\
+ListNodeHandler __handler = (handler);\
+if (__list)\
+{\
+__list->__head = 0; \
+__list->__tail = 0; \
+__list->__count = 0; \
+__list->__release_handler = (ListNodeHandler)__handler; \
+}\
+}\
+while(0)
 
-#define LIST_HEAD(list) (list->head)
+
+#define LIST_HEAD(list) (list->__head)
 
 
-#define LIST_TAIL(list) (list->tail)
+#define LIST_TAIL(list) (list->__tail)
+
+
+#define LIST_SIZE(list) (list->__count)
 
 
 #define LIST_PUSH(list, value)\
 do\
 {\
-if (list->head)\
+List *__list = (list);\
+void *__value = (value);\
+ListNode *__node = (ListNode*)Malloc(sizeof(ListNode)); \
+if (__list->__head)\
 {\
-ListNode *node = (ListNode*)Malloc(sizeof(ListNode)); \
-node->pre = list->tail; \
-node->next = 0; \
-node->data = (void*)value; \
-list->tail->next = node; \
-list->tail = node; \
+__node->__pre = __list->__tail; \
+__node->__next = 0; \
+__node->__data = (void*)__value; \
+__list->__tail->__next = __node; \
+__list->__tail = __node; \
 }\
 else\
 {\
-ListNode *node = (ListNode*)Malloc(sizeof(ListNode)); \
-node->data = (void*)value; \
-list->head = list->tail = node; \
-node->pre = node->next = 0; \
+__node->__data = (void*)__value; \
+__list->__head = __list->__tail = __node; \
+__node->__pre = __node->__next = 0; \
 }\
-list->count++;\
+__list->__count++;\
 } while (0)
 
 
 #define LIST_POP(list)\
 do\
 {\
-if (list->head)\
+List *__list = (list);\
+if (__list->__head)\
 {\
-ListNode *tmp = list->tail; \
-if (list->tail->pre)\
+ListNode *__tmp = __list->__tail; \
+if (__list->__tail->__pre)\
 {\
-list->tail = list->tail->pre; \
-list->tail->next = 0; \
+__list->__tail = __list->__tail->__pre; \
+__list->__tail->__next = 0; \
 }\
 else\
 {\
-list->head = list->head = 0;\
+__list->__head = __list->__head = 0;\
 }\
-list->release_handler ? list->release_handler(tmp->data) : 0; \
-Free(tmp); \
+__list->__release_handler ? __list->__release_handler(__tmp->__data) : 0; \
+Free(__tmp); \
 }\
-list->count--;\
+__list->__count--;\
 } while (0)
 
 
 #define LIST_REMOVE(list, node)\
 do\
 {\
-ListNode *tmp = node; \
-if (tmp->pre)\
+List *__list = (list);\
+ListNode *__node = (node);\
+if (__node->__pre)\
 {\
-tmp->pre->next = tmp->next; \
-if (tmp->next)\
+__node->__pre->__next = __node->__next; \
+if (__node->__next)\
 {\
-tmp->next->pre = tmp->pre; \
+__node->__next->__pre = __node->__pre; \
 }\
 else\
 {\
-list->tail = tmp->pre; \
+__list->__tail = __node->__pre; \
 }\
 }\
 else\
 {\
-list->head = tmp->next; \
-if (tmp->next)\
+__list->__head = __node->__next; \
+if (__node->__next)\
 {\
-tmp->next->pre = 0; \
+__node->__next->__pre = 0; \
 }\
 else\
 {\
-list->tail = 0; \
+__list->__tail = 0; \
 }\
 }\
-if (list->release_handler)\
+if (__list->__release_handler)\
 {\
-list->release_handler(tmp->data); \
+__list->__release_handler(__node->__data); \
 }\
-Free(tmp); \
-list->count--;\
+Free(__node); \
+__list->__count--;\
 } while (0)
 
 
-#define LIST_REMOVE_IF(list, rm_if)\
+#define LIST_REMOVE_IF(list, __rm_if)\
 do\
 {\
-ListNode **node = &list->head, *entry; \
-while (*node)\
+List *__list = (list);\
+ListNode **__node = &__list->__head, *__entry; \
+while (*__node)\
 {\
-entry = *node; \
-if (rm_if(entry->data))\
+__entry = *__node; \
+if (__rm_if(__entry->__data))\
 {\
-*node = entry->next; \
-if (*node == list->head)\
+*__node = __entry->__next; \
+if (*__node == __list->__head)\
 {\
-(*node)->pre = 0;\
+(*__node)->__pre = 0;\
 }\
-if (list->release_handler)\
+if (__list->__release_handler)\
 {\
-list->release_handler(entry->data); \
+__list->__release_handler(__entry->__data); \
 }\
-Free(entry); \
-list->count--;\
+Free(__entry); \
+__list->__count--;\
 }\
 else\
 {\
-node = &entry->next; \
+__node = &__entry->__next; \
 }\
 }\
 } while (0)
@@ -173,11 +189,13 @@ node = &entry->next; \
 #define LIST_TRAVERSE(list, handler)\
 do\
 {\
-ListNode *tmp = list->head; \
-while (tmp)\
+List *__list = (list);\
+ListNodeHandler __handler = (handler);\
+ListNode *__tmp = __list->__head; \
+while (__tmp)\
 {\
-handler(tmp->data); \
-tmp = tmp->next; \
+__handler(__tmp->__data); \
+__tmp = __tmp->__next; \
 }\
 } while (0)
 
@@ -185,11 +203,13 @@ tmp = tmp->next; \
 #define LIST_TRAVERSE2(list, handler)\
 do\
 {\
-ListNode *tmp = list->tail; \
-while (tmp)\
+List *__list = (list);\
+ListNodeHandler __handler = (handler);\
+ListNode *__tmp = __list->__tail; \
+while (__tmp)\
 {\
-handler(tmp->data); \
-tmp = tmp->pre; \
+__handler(__tmp->__data); \
+__tmp = __tmp->__pre; \
 }\
 } while (0)
 
@@ -197,19 +217,22 @@ tmp = tmp->pre; \
 #define LIST_DESTROY(list)\
 do\
 {\
-ListNode *curr = list->head, *tmp;\
-while (curr)\
+List *__list = (list);\
+ListNode *__curr = __list->__head, *__tmp;\
+while (__curr)\
 {\
-if (list->release_handler)\
+if (__list->__release_handler)\
 {\
-list->release_handler(curr->data); \
+__list->__release_handler(__curr->__data); \
 }\
-tmp = curr->next; \
-Free(curr); \
-curr = tmp;\
+__tmp = __curr->__next; \
+Free(__curr); \
+__curr = __tmp;\
 }\
-list->head = list->tail = 0;\
-list->count = 0;\
+__list->__head = __list->__tail = 0;\
+__list->__count = 0;\
+Free(__list);\
 } while (0)
 
-#endif // _list_h_
+
+#endif // _safelist_h_
