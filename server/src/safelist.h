@@ -78,7 +78,7 @@ while(0)
 do\
 {\
 SafeList *_tmp_list = (list);\
-void *_sl_value_ = (value);\
+void *_sl_value_ = (void*)(value);\
 mutex_lock(&_tmp_list->_sl_mutex_);\
 SafeListNode *_tmp_node = (SafeListNode*)Malloc(sizeof(SafeListNode)); \
 if (_tmp_list->_sl_head_)\

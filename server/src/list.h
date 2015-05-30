@@ -75,7 +75,7 @@ while(0)
 do\
 {\
 List *_tmp_list = (list);\
-void *_tmp_value = (value);\
+void *_tmp_value = (void*)(value);\
 ListNode *_tmp_node = (ListNode*)Malloc(sizeof(ListNode)); \
 if (_tmp_list->_list_head_)\
 {\
