@@ -9,6 +9,12 @@ void socks_online_foreach(SafeListNodeHandler handler)
     SAFE_LIST_TRAVERSE(g_sock_list, handler);
 }
 
+inline void heart_beat_sock(Sock *sock)
+{
+	sock->last_pack_time = time(0);
+}
+
+int sock_num = 0;
 inline Sock *create_sock(int fd, int epoll_fd)
 {
 	Sock *sock = (Sock*)Malloc(sizeof(Sock));
@@ -18,7 +24,10 @@ inline Sock *create_sock(int fd, int epoll_fd)
 
 	sock->epoll_fd = epoll_fd;
 
-	printf("create_sock: %d\n", SAFE_LIST_SIZE(g_sock_list));
+	heart_beat_sock(sock);
+
+	sock_num++;
+	printf("create_sock: %d / %d\n", SAFE_LIST_SIZE(g_sock_list), sock_num);
 
 	return sock;
 }
@@ -26,21 +35,27 @@ inline Sock *create_sock(int fd, int epoll_fd)
 static inline void free_sock(void *data)
 {
 	Sock *sock = (Sock*)data;
-	close(sock->fd);
+
+	
 	Free(sock);
 }
 
-inline void remove_sock(Sock *sock)
+inline void remove_sock(Sock *sock, bool left_in_list)
 {
 	if(sock->msg)
 	{
 		Free(sock->msg);
 	}
 	epoll_ctl(sock->epoll_fd, EPOLL_CTL_DEL, sock->fd, 0);
-	
-	SAFE_LIST_REMOVE(g_sock_list, sock->list_node);
+	close(sock->fd);
 
-	printf("remove_sock: %d\n", SAFE_LIST_SIZE(g_sock_list));
+	if(!left_in_list)
+	{
+		SAFE_LIST_REMOVE(g_sock_list, sock->list_node);	
+	}
+
+	sock_num--;
+	printf("create_sock: %d / %d\n", SAFE_LIST_SIZE(g_sock_list), sock_num);
 }
 
 inline SockMsg *create_recv_msg(Sock *sock)

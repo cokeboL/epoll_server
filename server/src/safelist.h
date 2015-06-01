@@ -43,7 +43,7 @@ typedef struct SafeList
 	SafeListNode *_sl_tail_;
 	SafeListNodeHandler _sl_release_handler_;
 	mutex_t _sl_mutex_;
-	uint32_t _sl_count_;
+	int32_t _sl_count_;
 }SafeList;
 
 

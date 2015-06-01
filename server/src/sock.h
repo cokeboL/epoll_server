@@ -69,7 +69,9 @@ extern SafeList *g_sock_list;
 
 extern Sock *create_sock(int fd, int epoll_fd);
 
-extern void remove_sock(Sock *sock);
+extern void remove_sock(Sock *sock, bool left_in_list);
+
+extern void heart_beat_sock(Sock *sock);
 
 extern SockMsg *create_recv_msg(Sock *sock);
 

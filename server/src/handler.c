@@ -82,6 +82,8 @@ static void read_data(Sock *sock)
 	int curr_normal_handler_idx = 0;
 	int curr_global_handler_idx = 0;
 
+	heart_beat_sock(sock);
+
 	int nread = 0;
 	while(1)
 	{
@@ -137,7 +139,7 @@ static void read_data(Sock *sock)
 	//sock->setLastPackTime(time(0));
 	
 Error:
-	remove_sock(sock);
+	remove_sock(sock, false);
 }
 
 static void *handler_thread(void *arg)

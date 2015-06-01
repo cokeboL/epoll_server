@@ -17,6 +17,7 @@
 #include <stdlib.h>
 
 #include "handler.h"
+#include "timer.h"
 #include "server.h"
 
 Server *g_servers[SERVER_NUM] = {0};
@@ -117,6 +118,7 @@ void start_server(const char *ip, unsigned short port)
 
     init_sock_list();
     start_handlers();
+    start_timer();
 
     int err = 0;
 
@@ -151,6 +153,7 @@ void start_server(const char *ip, unsigned short port)
 
 void stop_server()
 {
+    stop_timer();
     stop_handlers();
     destroy_sock_list();
 
