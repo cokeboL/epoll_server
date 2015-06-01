@@ -54,7 +54,7 @@ inline void remove_sock(Sock *sock, bool left_in_list)
 	}
 
 	sock_num--;
-	printf("create_sock: %d / %d\n", SAFE_LIST_SIZE(g_sock_list), sock_num);
+	printf("remove_sock: %d / %d\n", SAFE_LIST_SIZE(g_sock_list), sock_num);
 }
 
 inline SockMsg *create_recv_msg(Sock *sock)

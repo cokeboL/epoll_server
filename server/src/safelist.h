@@ -184,7 +184,7 @@ _tmp_entry = *_tmp_node; \
 if (_tmp_rm_if(_tmp_entry->_sl_data_))\
 {\
 *_tmp_node = _tmp_entry->_sl_next_; \
-if (*_tmp_node == _tmp_list->_sl_head_)\
+if ((*_tmp_node) && (*_tmp_node == _tmp_list->_sl_head_))\
 {\
 (*_tmp_node)->_sl_pre_ = 0;\
 }\
