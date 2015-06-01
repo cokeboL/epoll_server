@@ -27,7 +27,6 @@ inline Sock *create_sock(int fd, int epoll_fd)
 	heart_beat_sock(sock);
 
 	sock_num++;
-	printf("create_sock: %d / %d\n", SAFE_LIST_SIZE(g_sock_list), sock_num);
 
 	return sock;
 }

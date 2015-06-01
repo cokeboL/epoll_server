@@ -67,6 +67,7 @@ static void *server_thread(void *arg)
                     sock_fd_map[sockfd] = sock;
 
                     SAFE_LIST_PUSH(g_sock_list, sock, &sock->list_node);
+                    printf("create_sock: %d / %d\n", SAFE_LIST_SIZE(g_sock_list), sock_num);
                 }
                 else
                 {
