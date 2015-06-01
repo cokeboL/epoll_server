@@ -2,18 +2,24 @@
 #include "sock.h"
 #include "server.h"
 
+
 int g_max_sock_fd = 0;
 Sock *g_socks[MAX_CLIENTS_NUM] = {0};
 
-void socks_online_foreach(socks_foreach_handler handler)
+SafeList *g_sock_list = 0;
+
+void socks_online_foreach(SafeListNodeHandler handler)
 {
+	/*
     for(int i = 0; i < g_max_sock_fd; i++)
     {
-        if(g_servers[i])
+        if(g_socks[i])
         {
-            handler(g_servers[i]);
+            handler(g_socks[i]);
         }
     }
+    */
+    SAFE_LIST_TRAVERSE(g_sock_list, handler);
 }
 
 int sock_num = 0;
@@ -30,6 +36,13 @@ inline Sock *create_sock(int fd)
 	printf("create_sock: %d\n", sock_num);
 
 	return sock;
+}
+
+static inline void free_sock(void *data)
+{
+	Sock *sock = (Sock*)data;
+	//close(sock->fd);
+	//Free(sock);
 }
 
 inline void remove_sock(Sock *sock)
@@ -52,12 +65,14 @@ inline void remove_sock(Sock *sock)
 		}
 	}
 	
+	SAFE_LIST_REMOVE(g_sock_list, sock->list_node);
+
 	close(sock->fd);
 	g_socks[sock->fd] = 0;
 	Free(sock);
 
 	sock_num--;
-	printf("remove_sock: %d\n", sock_num);
+	printf("remove_sock: %d - %d\n", sock_num, SAFE_LIST_SIZE(g_sock_list));
 }
 
 inline SockMsg *create_recv_msg(Sock *sock)
@@ -109,4 +124,15 @@ inline void msg_release(SockMsg *msg)
 	{
 		Free(msg);
 	}
+}
+
+void init_sock_list()
+{
+	g_sock_list = SAFE_LIST_CREATE();
+	SAFE_LIST_INIT(g_sock_list, free_sock);
+}
+
+void destroy_sock_list()
+{
+	SAFE_LIST_DESTROY(g_sock_list);
 }

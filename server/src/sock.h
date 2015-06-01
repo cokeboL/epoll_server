@@ -2,6 +2,7 @@
 #define _sock_h_
 
 #include "commen.h"
+#include "safelist.h"
 
 #define PACK_HEAD_LEN 4
 #define MSG_HEAD_NOT_READED  0 //未读到msg长度
@@ -19,6 +20,8 @@ typedef struct Sock
 	int fd;
 
 	int epoll_fd;
+
+	SafeListNode *list_node;
 
 	//收到数据，对方此消息的总长度
 	uint16_t len_total;
@@ -65,6 +68,8 @@ struct SockMsg
 extern int g_max_sock_fd;
 extern Sock *g_socks[MAX_CLIENTS_NUM];
 
+extern SafeList *g_sock_list;
+
 extern Sock *create_sock(int fd);
 
 extern void remove_sock(Sock *sock);
@@ -77,7 +82,10 @@ extern void msg_retain(SockMsg *msg);
 
 extern void msg_release(SockMsg *msg);
 
-typedef void (*socks_foreach_handler)(Sock*);
-extern void socks_online_foreach(socks_foreach_handler handler);
+extern void init_sock_list();
+
+extern void destroy_sock_list();
+
+extern void socks_online_foreach(SafeListNodeHandler handler);
 
 #endif // _sock_h_

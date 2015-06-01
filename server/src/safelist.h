@@ -5,11 +5,13 @@
 #include <stdint.h>
 #include "mutex.h"
 
+#if UseDefaultAllocator
 #ifndef Malloc
 #define Malloc malloc
 #endif
 #ifndef Free
 #define Free free
+#endif
 #endif
 
 
@@ -74,10 +76,11 @@ while(0)
 #define SAFE_LIST_SIZE(list) (list->_sl_count_)
 
 
-#define SAFE_LIST_PUSH(list, value)\
+#define SAFE_LIST_PUSH(list, value, list_node)\
 do\
 {\
 SafeList *_tmp_list = (list);\
+SafeListNode **_tmp_list_node = list_node;\
 void *_sl_value_ = (void*)(value);\
 mutex_lock(&_tmp_list->_sl_mutex_);\
 SafeListNode *_tmp_node = (SafeListNode*)Malloc(sizeof(SafeListNode)); \
@@ -96,6 +99,10 @@ _tmp_list->_sl_head_ = _tmp_list->_sl_tail_ = _tmp_node; \
 _tmp_node->_sl_pre_ = _tmp_node->_sl_next_ = 0; \
 }\
 _tmp_list->_sl_count_++;\
+if(_tmp_list_node)\
+{\
+*_tmp_list_node = _tmp_node;\
+}\
 mutex_unlock(&_tmp_list->_sl_mutex_);\
 } while (0)
 

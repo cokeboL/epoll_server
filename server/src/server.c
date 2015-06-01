@@ -19,7 +19,6 @@
 #include "handler.h"
 #include "server.h"
 
-
 Server *g_servers[SERVER_NUM] = {0};
 
 
@@ -61,8 +60,11 @@ static void *server_thread(void *arg)
                     event.events = EPOLLIN | EPOLLET;  
                     epoll_ctl(epoll_fd, EPOLL_CTL_ADD, event.data.fd, &event); //将新的fd添加到epoll的监听队列中
 
-                    g_socks[sockfd] = create_sock(sockfd);
+                    Sock *sock = create_sock(sockfd);
+                    g_socks[sockfd] = sock;
                     g_socks[sockfd]->epoll_fd = epoll_fd;
+
+                    SAFE_LIST_PUSH(g_sock_list, sock, &sock->list_node);
                 }
             }
             else if(events[i].events & EPOLLIN ) //接收到数据，读socket  
@@ -108,6 +110,7 @@ void start_server(const char *ip, unsigned short port)
 {
     signal(SIGPIPE, SIG_IGN);
 
+    init_sock_list();
     start_handlers();
 
     int err = 0;
@@ -144,6 +147,7 @@ void start_server(const char *ip, unsigned short port)
 void stop_server()
 {
     stop_handlers();
+    destroy_sock_list();
 
     close(server_sock);
 
