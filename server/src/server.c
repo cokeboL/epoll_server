@@ -22,9 +22,10 @@
 
 Server *g_servers[SERVER_NUM] = {0};
 
+Sock *g_sock_fd_map[MAX_FD_NUM] = {0};
+
 static int server_sock = 0;
 
-static Sock *sock_fd_map[MAX_FD_NUM] = {0};
 
 static void *server_thread(void *arg)
 {
@@ -64,7 +65,7 @@ static void *server_thread(void *arg)
 
                     Sock *sock = create_sock(sockfd, epoll_fd);
                     
-                    sock_fd_map[sockfd] = sock;
+                    g_sock_fd_map[sockfd] = sock;
 
                     SAFE_LIST_PUSH(g_sock_list, sock, &sock->list_node);
                     printf("create_sock: %d\n", SAFE_LIST_SIZE(g_sock_list));
@@ -76,7 +77,7 @@ static void *server_thread(void *arg)
             }
             else if(events[i].events & EPOLLIN ) //接收到数据，读socket  
             {
-                write(g_handlers[events[i].data.fd % HANDLER_NUM]->fds[1], (char*)&sock_fd_map[events[i].data.fd], sizeof(Sock*));
+                write(g_handlers[events[i].data.fd % HANDLER_NUM]->fds[1], (char*)&g_sock_fd_map[events[i].data.fd], sizeof(Sock*));
             }
             /*
             else if(events[i].events & EPOLLOUT) //有数据待发送，写socket  

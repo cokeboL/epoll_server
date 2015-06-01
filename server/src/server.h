@@ -19,5 +19,7 @@ void stop_server();
 
 extern Server *g_servers[SERVER_NUM];
 
+extern Sock *g_sock_fd_map[MAX_FD_NUM];
+
 #endif // _server_h_
 

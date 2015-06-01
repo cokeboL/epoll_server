@@ -41,6 +41,8 @@ static inline void free_sock(void *data)
 
 inline void remove_sock(Sock *sock, bool left_in_list)
 {
+	g_sock_fd_map[sock->fd] = 0;
+
 	if(sock->msg)
 	{
 		Free(sock->msg);
