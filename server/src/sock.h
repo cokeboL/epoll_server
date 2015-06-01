@@ -65,12 +65,9 @@ struct SockMsg
 #define MSG_ACTION(msg) ((msg)->data[3])
 
 
-extern int g_max_sock_fd;
-extern Sock *g_socks[MAX_CLIENTS_NUM];
-
 extern SafeList *g_sock_list;
 
-extern Sock *create_sock(int fd);
+extern Sock *create_sock(int fd, int epoll_fd);
 
 extern void remove_sock(Sock *sock);
 

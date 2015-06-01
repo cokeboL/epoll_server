@@ -21,8 +21,9 @@
 
 Server *g_servers[SERVER_NUM] = {0};
 
-
 static int server_sock = 0;
+
+static Sock *sock_fd_map[MAX_FD_NUM] = {0};
 
 static void *server_thread(void *arg)
 {
@@ -32,7 +33,7 @@ static void *server_thread(void *arg)
 
     struct epoll_event event;
     struct epoll_event events[1024];
-    int epoll_fd = epoll_create(MAX_CLIENTS_NUM);
+    int epoll_fd = epoll_create(MAX_CLIENT_NUM);
 
     int curr_reader = 0;
 
@@ -53,23 +54,27 @@ static void *server_thread(void *arg)
             if(events[i].data.fd == server_sock) //有新的连接  
             {
                 sockfd= accept(server_sock, 0, 0); //accept这个连接  
-                if(sockfd >= 0 && sockfd < MAX_CLIENTS_NUM)
+                if((SAFE_LIST_SIZE(g_sock_list) < MAX_CLIENT_NUM) && (sockfd < MAX_FD_NUM))
                 {
                     fcntl(sockfd, F_SETFL, O_NONBLOCK);
                     event.data.fd = sockfd;
                     event.events = EPOLLIN | EPOLLET;  
                     epoll_ctl(epoll_fd, EPOLL_CTL_ADD, event.data.fd, &event); //将新的fd添加到epoll的监听队列中
 
-                    Sock *sock = create_sock(sockfd);
-                    g_socks[sockfd] = sock;
-                    g_socks[sockfd]->epoll_fd = epoll_fd;
+                    Sock *sock = create_sock(sockfd, epoll_fd);
+                    
+                    sock_fd_map[sockfd] = sock;
 
                     SAFE_LIST_PUSH(g_sock_list, sock, &sock->list_node);
+                }
+                else
+                {
+                    close(sockfd);
                 }
             }
             else if(events[i].events & EPOLLIN ) //接收到数据，读socket  
             {
-                write(g_handlers[events[i].data.fd % HANDLER_NUM]->fds[1], (char*)&g_socks[events[i].data.fd], sizeof(Sock*));
+                write(g_handlers[events[i].data.fd % HANDLER_NUM]->fds[1], (char*)&sock_fd_map[events[i].data.fd], sizeof(Sock*));
             }
             /*
             else if(events[i].events & EPOLLOUT) //有数据待发送，写socket  

@@ -2,38 +2,23 @@
 #include "sock.h"
 #include "server.h"
 
-
-int g_max_sock_fd = 0;
-Sock *g_socks[MAX_CLIENTS_NUM] = {0};
-
 SafeList *g_sock_list = 0;
 
 void socks_online_foreach(SafeListNodeHandler handler)
 {
-	/*
-    for(int i = 0; i < g_max_sock_fd; i++)
-    {
-        if(g_socks[i])
-        {
-            handler(g_socks[i]);
-        }
-    }
-    */
     SAFE_LIST_TRAVERSE(g_sock_list, handler);
 }
 
-int sock_num = 0;
-inline Sock *create_sock(int fd)
+inline Sock *create_sock(int fd, int epoll_fd)
 {
 	Sock *sock = (Sock*)Malloc(sizeof(Sock));
 	memset(sock, 0, sizeof(Sock));
 	sock->fd = fd;
 	sock->legal = true;
 
-	g_max_sock_fd = (g_max_sock_fd < fd) ? fd : g_max_sock_fd;
+	sock->epoll_fd = epoll_fd;
 
-	sock_num++;
-	printf("create_sock: %d\n", sock_num);
+	printf("create_sock: %d\n", SAFE_LIST_SIZE(g_sock_list));
 
 	return sock;
 }
@@ -41,8 +26,8 @@ inline Sock *create_sock(int fd)
 static inline void free_sock(void *data)
 {
 	Sock *sock = (Sock*)data;
-	//close(sock->fd);
-	//Free(sock);
+	close(sock->fd);
+	Free(sock);
 }
 
 inline void remove_sock(Sock *sock)
@@ -52,27 +37,10 @@ inline void remove_sock(Sock *sock)
 		Free(sock->msg);
 	}
 	epoll_ctl(sock->epoll_fd, EPOLL_CTL_DEL, sock->fd, 0);
-
-	if(g_max_sock_fd == sock->fd)
-	{
-		for(int i = g_max_sock_fd; i >= 0; i--)
-		{
-			if(g_socks[i])
-			{
-				g_max_sock_fd = i;
-				break;
-			}
-		}
-	}
 	
 	SAFE_LIST_REMOVE(g_sock_list, sock->list_node);
 
-	close(sock->fd);
-	g_socks[sock->fd] = 0;
-	Free(sock);
-
-	sock_num--;
-	printf("remove_sock: %d - %d\n", sock_num, SAFE_LIST_SIZE(g_sock_list));
+	printf("remove_sock: %d\n", SAFE_LIST_SIZE(g_sock_list));
 }
 
 inline SockMsg *create_recv_msg(Sock *sock)
