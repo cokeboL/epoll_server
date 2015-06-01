@@ -1,18 +1,18 @@
 #ifndef _debug_h_
 #define _debug_h_
 
-#ifdef DEBUG
-
 #include<stdio.h>
 
-#define INFO(format) fprintf(stderr,"%s:%d:%s -> " format "\n", __FILE__, __LINE__, __func__)
-#define LOG(format, ...) fprintf(stderr,"%s:%d:%s -> " format "\n", __FILE__, __LINE__, __func__, __VA_ARGS__)
+#define LOG_LEVELE LLEVEL_INFO
 
-#else
+typedef enum LogLevel
+{
+	LLEVEL_INFO,
+	LLEVEL_DEBUG,
+	LLEVEL_WARNING,
+	LLEVEL_ERROR,
+}LogLevel;
 
-#define LOG(...)
-#define INFO(...)
-
-#endif // DEBUG
+#define LOG(level, format) fprintf(stderr,"[LOG] %s:%d:%s -> " format "\n", __FILE__, __LINE__, __func__)
 
 #endif // _debug_h_

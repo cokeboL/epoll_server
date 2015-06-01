@@ -26,9 +26,9 @@ static void *timer_thread(void *arg)
 	while(timer.running)
 	{
 		curr_time = time(0);
-		printf("--- timer check begin 111\n");
+		LOG(LLEVEL_INFO, "timer check 111");
 		SAFE_LIST_REMOVE_IF(g_sock_list, check_sock);
-		printf("--- timer check begin 222\n");
+		LOG(LLEVEL_INFO, "timer check 222");
 
 		usleep(HEART_BEAT_TIME);
 	}
