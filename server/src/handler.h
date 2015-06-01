@@ -11,8 +11,6 @@ typedef struct Handler
 	bool running;
 }Handler;
 
-bool wirte_msg(SockMsg *msg);
-
 void start_handlers();
 
 void stop_handlers();

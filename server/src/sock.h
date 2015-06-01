@@ -58,6 +58,10 @@ struct SockMsg
 	char data[0];    //消息体：去掉整个Msg的head四个字节
 };
 
+#define MSG_CMD(msg) ((msg)->data[2])
+#define MSG_ACTION(msg) ((msg)->data[3])
+
+
 extern int g_max_sock_fd;
 extern Sock *g_socks[MAX_CLIENTS_NUM];
 

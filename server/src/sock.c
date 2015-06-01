@@ -105,7 +105,7 @@ inline void msg_retain(SockMsg *msg)
 inline void msg_release(SockMsg *msg)
 {
 	msg->count--;
-	if(msg->count <= 0)
+	if(msg->count == 0)
 	{
 		Free(msg);
 	}

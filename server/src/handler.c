@@ -4,9 +4,12 @@ static void free_handler(Handler*);
 
 Handler *g_handlers[HANDLER_NUM] = {0};
 
-inline bool wirte_msg(SockMsg *msg)
+
+bool write_msg(SockMsg *msg)
 {
-	msg->len
+	//return write(msg->sock->fd, msg->data, msg->len) == msg->len;
+	msg_retain(msg); // 加正式的handler之后应把此句删掉
+
 	int nwrite = 0;
 	while(1)
 	{
@@ -18,20 +21,18 @@ inline bool wirte_msg(SockMsg *msg)
 			{
 				break;
 			}
-			else if(msg->len > 0)
-			{
-				usleep(SEND_SLEEP_US);
-			}
-			else
+			/*
+			else ifnwrite > msg->len)
 			{
 				goto Error;
 			}
+			*/
 		}
-		else if((nwrite < 0) && (errno == EAGAIN) || (errno == EINTR) || (errno == EWOULDBLOCK))
+		else if((nwrite < 0) && (errno == EAGAIN || errno == EINTR || errno == EWOULDBLOCK))
 		{
-			
+
 		}
-		else if(nwrite == 0)
+		else
 		{
 			goto Error;
 		}
@@ -41,17 +42,41 @@ inline bool wirte_msg(SockMsg *msg)
 
 	msg_release(msg);
 	return true;
-
+	
 Error:
+	msg_release(msg);
 	return false;
 }
 
-static inline bool handle_msg(SockMsg *msg)
+static bool tmp_handler(SockMsg *msg)
 {
-	return wirte_msg(msg);
+	msg_retain(msg);
 }
 
-static inline void read_data(Sock *sock)
+static bool handle_msg(SockMsg *msg)
+{
+	bool ret = false;
+	switch(MSG_CMD(msg))
+	{
+		#if 0
+		case 1:
+			//ret = handler1();
+			break;
+		case 2:
+			//ret = handler2();
+			break;
+		#endif
+		default:
+			ret = write_msg(msg);
+			break;
+	}
+
+	msg_release(msg);
+
+	return ret;
+}
+
+static void read_data(Sock *sock)
 {
 	int pack_count = 0;
 	int curr_normal_handler_idx = 0;
@@ -63,7 +88,8 @@ static inline void read_data(Sock *sock)
 		if(!sock->msg)
 		{
 			nread = read(sock->fd, sock->head+sock->len_readed, PACK_HEAD_LEN - sock->len_readed);
-			if((nread < 0) && (errno == EAGAIN) || (errno == EINTR) || (errno == EWOULDBLOCK))
+			if(nread <= 0)
+			if((nread < 0) && (errno == EAGAIN || errno == EINTR || errno == EWOULDBLOCK))
 			{
 				return;
 			}
@@ -85,7 +111,7 @@ static inline void read_data(Sock *sock)
 			}
 		}
 		nread = read(sock->fd, sock->msg->buf + sock->len_readed, sock->len_total - sock->len_readed);
-		if((nread < 0) && (errno == EAGAIN) || (errno == EINTR) || (errno == EWOULDBLOCK))
+		if((nread < 0) && (errno == EAGAIN || errno == EINTR || errno == EWOULDBLOCK))
 		{
 			return;
 		}
@@ -98,12 +124,10 @@ static inline void read_data(Sock *sock)
 
 		if(sock->len_readed == sock->len_total)
 		{
-			if(handle_msg(sock->msg))
-			{
-				sock->msg = 0;
-				sock->len_readed = 0;
-			}
-			else
+			bool ret = handle_msg(sock->msg);
+			sock->msg = 0;
+			sock->len_readed = 0;
+			if(!ret)
 			{
 				goto Error;
 			}
