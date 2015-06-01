@@ -4,13 +4,54 @@ static void free_handler(Handler*);
 
 Handler *g_handlers[HANDLER_NUM] = {0};
 
-static void handle_msg(SockMsg *msg)
+inline bool wirte_msg(SockMsg *msg)
 {
-	write(msg->sock->fd, msg->data, msg->len);
+	msg->len
+	int nwrite = 0;
+	while(1)
+	{
+		nwrite = write(msg->sock->fd, msg->data, msg->len);
+		if(nwrite > 0)
+		{
+			msg->len -= nwrite;
+			if(msg->len == 0)
+			{
+				break;
+			}
+			else if(msg->len > 0)
+			{
+				usleep(SEND_SLEEP_US);
+			}
+			else
+			{
+				goto Error;
+			}
+		}
+		else if((nwrite < 0) && (errno == EAGAIN) || (errno == EINTR) || (errno == EWOULDBLOCK))
+		{
+			
+		}
+		else if(nwrite == 0)
+		{
+			goto Error;
+		}
+
+		usleep(SEND_SLEEP_US);
+	}
+
 	msg_release(msg);
+	return true;
+
+Error:
+	return false;
 }
 
-static void read_data(Sock *sock)
+static inline bool handle_msg(SockMsg *msg)
+{
+	return wirte_msg(msg);
+}
+
+static inline void read_data(Sock *sock)
 {
 	int pack_count = 0;
 	int curr_normal_handler_idx = 0;
@@ -22,8 +63,7 @@ static void read_data(Sock *sock)
 		if(!sock->msg)
 		{
 			nread = read(sock->fd, sock->head+sock->len_readed, PACK_HEAD_LEN - sock->len_readed);
-			if(nread <= 0)
-			if((nread < 0) && (errno == EINTR || errno == EWOULDBLOCK || errno == EAGAIN))
+			if((nread < 0) && (errno == EAGAIN) || (errno == EINTR) || (errno == EWOULDBLOCK))
 			{
 				return;
 			}
@@ -45,7 +85,7 @@ static void read_data(Sock *sock)
 			}
 		}
 		nread = read(sock->fd, sock->msg->buf + sock->len_readed, sock->len_total - sock->len_readed);
-		if((nread < 0) && (errno == EINTR || errno == EWOULDBLOCK || errno == EAGAIN))
+		if((nread < 0) && (errno == EAGAIN) || (errno == EINTR) || (errno == EWOULDBLOCK))
 		{
 			return;
 		}
@@ -58,9 +98,15 @@ static void read_data(Sock *sock)
 
 		if(sock->len_readed == sock->len_total)
 		{
-			handle_msg(sock->msg);
-			sock->msg = 0;
-			sock->len_readed = 0;
+			if(handle_msg(sock->msg))
+			{
+				sock->msg = 0;
+				sock->len_readed = 0;
+			}
+			else
+			{
+				goto Error;
+			}
 		}
 	}
 	return;
