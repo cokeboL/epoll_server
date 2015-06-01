@@ -8,6 +8,7 @@ typedef struct Handler
 {
 	int fds[2];
 	pthread_t tid;
+	char buf[MAX_MSG_LEN];
 	bool running;
 }Handler;
 
