@@ -15,9 +15,9 @@
 #define SERVER_NUM 2    //监听事件的server线程数
 #define HANDLER_NUM 3   //处理io事件及逻辑的handler线程数
 
-#define MAX_FD_NUM      0x1FFFF   //最大fd值
-#define MAX_CLIENT_NUM  0xFFFF    //最大连接数
-#define MAX_MSG_LEN     (1024*10) //最大消息长度
+#define MAX_FD_NUM        0x1FFFF   //最大fd值
+#define MAX_CLIENT_NUM    0xFFFF    //最大连接数
+#define MAX_MSG_LEN       (1024*10) //最大消息长度
 
 #define USEC_PER_SEC    (1000*1000)        //每秒毫秒数
 #define HEART_BEAT_TIME (USEC_PER_SEC * 5) //心跳间隔

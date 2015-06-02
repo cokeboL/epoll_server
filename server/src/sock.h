@@ -3,6 +3,7 @@
 
 #include "commen.h"
 #include "safelist.h"
+#include "user.h"
 
 #define PACK_HEAD_LEN 4
 #define MSG_HEAD_NOT_READED  0 //未读到msg长度
@@ -45,9 +46,12 @@ typedef struct Sock
 	//校验标识
 	bool verify;
 
-	//存储读到的数据
+	//存储读到的数据，head为数据头，读够数据头后动态分配msg长度的buf，并读取msg保存到msg里
 	int8_t head[PACK_HEAD_LEN];
 	SockMsg *msg;
+
+	//玩家数据
+	User *user;
 }Sock;
 
 struct SockMsg
