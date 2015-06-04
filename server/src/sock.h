@@ -3,7 +3,6 @@
 
 #include "commen.h"
 #include "safelist.h"
-#include "user.h"
 
 #define PACK_HEAD_LEN 4
 #define MSG_HEAD_NOT_READED  0 //未读到msg长度
@@ -49,9 +48,6 @@ typedef struct Sock
 	//存储读到的数据，head为数据头，读够数据头后动态分配msg长度的buf，并读取msg保存到msg里
 	int8_t head[PACK_HEAD_LEN];
 	SockMsg *msg;
-
-	//玩家数据
-	User *user;
 }Sock;
 
 struct SockMsg
@@ -65,9 +61,16 @@ struct SockMsg
 	char data[0];    //消息体：去掉整个Msg的head四个字节
 };
 
-#define MSG_CMD(msg) ((msg)->data[2])
-#define MSG_ACTION(msg) ((msg)->data[3])
-
+#define MSG_SOCK1(msg)              ((((unsigned long long)(msg->sock)) >> 32) & 0xFFFFFFFF)
+#define MSG_SOCK2(msg)              (((unsigned long long)(msg->sock)) & 0xFFFFFFFF)
+#define MSG_SOCK(msg)               (msg->sock)
+#define MSG_CMD(msg)                ((msg)->data[2])
+#define MSG_ACTION(msg)             ((msg)->data[3])
+#define MSG_MSG(msg)                (&(msg->data[4]))
+#define MSG_LEN(msg)                (msg->len-PACK_HEAD_LEN)
+#define SET_MSG_CMD(buf, cmd)       ((buf[2]) = cmd)
+#define SET_MSG_ACTION(buf, action) ((buf[3]) = action)
+#define SET_MSG_MSG(buf, msg, len)  strncpy((buf+PACK_HEAD_LEN), (msg), (len)); *(uint16_t*)&(buf) = (len) + PACK_HEAD_LEN;
 
 extern SafeList *g_sock_list;
 
@@ -85,7 +88,7 @@ extern void msg_retain(SockMsg *msg);
 
 extern void msg_release(SockMsg *msg);
 
-extern void init_sock_list();
+extern void create_sock_list();
 
 extern void destroy_sock_list();
 

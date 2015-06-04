@@ -1,15 +1,38 @@
 #include "handler.h"
+#include "clua.h"
 
-static void free_handler(Handler*);
+bool connect_to(const char *ip, unsigned short port)
+{
+	int sockfd = socket(AF_INET, SOCK_STREAM, 0);
+    
 
-Handler *g_handlers[HANDLER_NUM] = {0};
+    struct sockaddr_in addr;
+    
+    sockfd = socket(AF_INET, SOCK_STREAM, 0);
 
+    bzero(&addr, sizeof(addr));
+    addr.sin_family = AF_INET;
+    addr.sin_addr.s_addr = inet_addr(ip);
+    addr.sin_port = htons(port);
+
+	if(connect(sockfd, (struct sockaddr*)&addr, sizeof(addr)) < 0)
+	{
+		printf("connect failed!\n");
+		close(sockfd);
+		return false;
+	}
+
+	int flags = fcntl(sockfd, F_GETFL, 0);
+	fcntl(sockfd, F_SETFL, flags | O_NONBLOCK);
+
+	return true;
+}
 
 bool write_msg(SockMsg *msg)
 {
 	//return write(msg->sock->fd, msg->data, msg->len) == msg->len;
-	msg_retain(msg); // 加正式的handler之后应把此句删掉
-
+	//msg_retain(msg); // 加正式的handler之后应把此句删掉
+	printf("==== 888\n");
 	int nwrite = 0;
 	while(1)
 	{
@@ -39,7 +62,7 @@ bool write_msg(SockMsg *msg)
 
 		usleep(SEND_SLEEP_US);
 	}
-
+	printf("==== 999\n");
 	msg_release(msg);
 	return true;
 	
@@ -48,13 +71,9 @@ Error:
 	return false;
 }
 
-static bool tmp_handler(SockMsg *msg)
+static inline bool handle_msg(lua_State *state, SockMsg *msg)
 {
-	msg_retain(msg);
-}
-
-static bool handle_msg(SockMsg *msg)
-{
+#if 0
 	bool ret = false;
 	switch(MSG_CMD(msg))
 	{
@@ -70,6 +89,8 @@ static bool handle_msg(SockMsg *msg)
 			ret = write_msg(msg);
 			break;
 	}
+#endif
+	bool ret = lua_msg_handler(state, msg);
 
 	msg_release(msg);
 
@@ -77,7 +98,7 @@ static bool handle_msg(SockMsg *msg)
 }
 
 //读数据
-static void read_data(Sock *sock)
+void read_data(lua_State *state, Sock *sock)
 {
 	//int pack_count = 0;
 	//int curr_normal_handler_idx = 0;
@@ -85,7 +106,7 @@ static void read_data(Sock *sock)
 
 	//设置心跳 -> 最后响应时间
 	heart_beat_sock(sock);
-
+	printf("==== 333 sock->fd: %d efd: %d\n", sock->fd, sock->epoll_fd);
 	int nread = 0;
 	while(1)
 	{
@@ -121,6 +142,7 @@ static void read_data(Sock *sock)
 			{
 				return;
 			}
+			printf("==== 444\n");
 		}
 
 		//读取包内容
@@ -138,11 +160,12 @@ static void read_data(Sock *sock)
 
 		//读到的长度累加
 		sock->len_readed += nread;
-
+		printf("==== 555\n");
 		//读到完整包内容，则处理msg
 		if(sock->len_readed == sock->len_total)
 		{
-			bool ret = handle_msg(sock->msg);
+			printf("==== 666\n");
+			bool ret = handle_msg(state, sock->msg);
 			sock->msg = 0;
 			sock->len_readed = 0;
 			//处理过程中出错，关闭清理sock
@@ -150,83 +173,13 @@ static void read_data(Sock *sock)
 			{
 				goto Error;
 			}
+			break;
 		}
 	}
-	//return;
+	return;
 	
 Error:
+	printf("==== 777 1\n");
 	remove_sock(sock, false);
-}
-
-static void *handler_thread(void *arg)
-{
-	Handler *handler = (Handler*)arg;
-	pthread_detach(pthread_self());
-
-	Sock *sock;
-	int sum = 0, n = 0, p_sock;
-	while(handler->running)
-	{
-		while(1)
-		{
-			n = read(handler->fds[0], (char*)&sock+sum, sizeof(sock)-sum);
-			if(n < 0)
-			{
-
-			}
-			else
-			{
-				sum += n;
-			}
-			if(sum == sizeof(sock))
-			{
-				break;
-			}
-		}
-		read_data(sock);
-
-		sum = 0;
-	}
-
-	free_handler(handler);
-}
-
-static Handler *create_handler()
-{
-	Handler *handler = (Handler*)Malloc(sizeof(Handler));
-	
-	pipe(handler->fds);
-	
-	handler->running = true;
-    int err = pthread_create(&handler->tid, NULL, &handler_thread, (void*)handler); //创建线程  
-
-    return handler;
-}
-
-static void remove_handler(Handler *handler)
-{
-	handler->running = false;	
-}
-
-static void free_handler(Handler *handler)
-{
-	close(handler->fds[0]);
-	close(handler->fds[1]);
-	Free(handler);	
-}
-
-void start_handlers()
-{
-    for(int i = 0; i < HANDLER_NUM; i++)
-    {
-        g_handlers[i] = create_handler();
-    }
-}
-
-void stop_handlers()
-{
-    for(int i = 0; i < HANDLER_NUM; i++)
-    {
-        remove_handler(g_handlers[i]);
-    }
+	printf("==== 777 2\n");
 }

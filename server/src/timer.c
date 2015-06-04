@@ -26,9 +26,9 @@ static void *timer_thread(void *arg)
 	while(timer.running)
 	{
 		curr_time = time(0);
-		LOG(LLEVEL_INFO, "timer check 111");
+		printf("timer check 111 sock_list size: %d\n", SAFE_LIST_SIZE(g_sock_list));
 		SAFE_LIST_REMOVE_IF(g_sock_list, check_sock);
-		LOG(LLEVEL_INFO, "timer check 222");
+		printf("timer check 222 sock_list size: %d\n", SAFE_LIST_SIZE(g_sock_list));
 
 		usleep(HEART_BEAT_TIME);
 	}

@@ -1,26 +1,8 @@
-#include <sys/socket.h>
-#include <sys/epoll.h>
-#include <signal.h>
-#include <fcntl.h>
-#include <stdio.h>
-#include <sys/epoll.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <netdb.h>
-#include <sys/types.h>
-#include <signal.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <string.h>
-#include <errno.h>
-#include <stdlib.h>
-
 #include "handler.h"
 #include "timer.h"
 #include "server.h"
 
-Server *g_servers[SERVER_NUM] = {0};
+Server *g_server = 0;
 
 Sock *g_sock_fd_map[MAX_FD_NUM] = {0};
 
@@ -56,9 +38,12 @@ static void *server_thread(void *arg)
             if(events[i].data.fd == server_sock) //有新的连接  
             {
                 sockfd= accept(server_sock, 0, 0); //accept这个连接  
+                printf("++++ 000 sockfd: %d\n", sockfd);
                 if((SAFE_LIST_SIZE(g_sock_list) < MAX_CLIENT_NUM) && (sockfd < MAX_FD_NUM))
                 {
-                    fcntl(sockfd, F_SETFL, O_NONBLOCK);
+                    int flags = fcntl(sockfd, F_GETFL, 0);
+                    fcntl(sockfd, F_SETFL, flags | O_NONBLOCK);
+
                     event.data.fd = sockfd;
                     event.events = EPOLLIN | EPOLLET;  
                     epoll_ctl(epoll_fd, EPOLL_CTL_ADD, event.data.fd, &event); //将新的fd添加到epoll的监听队列中
@@ -77,7 +62,9 @@ static void *server_thread(void *arg)
             }
             else if(events[i].events & EPOLLIN ) //接收到数据，读socket  
             {
-                write(g_handlers[events[i].data.fd % HANDLER_NUM]->fds[1], (char*)&g_sock_fd_map[events[i].data.fd], sizeof(Sock*));
+                printf("==== 111\n");
+                read_data(g_server->state, g_sock_fd_map[events[i].data.fd]);
+                //write(g_handlers[events[i].data.fd % HANDLER_NUM]->fds[1], (char*)&g_sock_fd_map[events[i].data.fd], sizeof(Sock*));
             }
             /*
             else if(events[i].events & EPOLLOUT) //有数据待发送，写socket  
@@ -98,6 +85,9 @@ static Server *create_server(int listen_fd)
     server->fd = listen_fd;
     server->running = true;
 
+    server->state = open_lua();
+    //lua_set_handler(server->state, server);
+
     int err = pthread_create(&server->tid, NULL, &server_thread, (void*)server); //创建线程  
 
     return server;
@@ -114,12 +104,16 @@ static void free_server(Server *server)
     Free(server);   
 }
 
+void sig_handler(int n)
+{
+    printf("-- signal no: %d\n", n);
+}
 void start_server(const char *ip, unsigned short port)
 {
-    signal(SIGPIPE, SIG_IGN);
-
-    init_sock_list();
-    start_handlers();
+    //signal(SIGPIPE, SIG_IGN);
+    signal(SIGPIPE, sig_handler);
+    
+    create_sock_list();
     start_timer();
 
     int err = 0;
@@ -131,8 +125,8 @@ void start_server(const char *ip, unsigned short port)
     struct sockaddr_in addr;
     memset(&addr, 0 , sizeof(addr));
     addr.sin_family = AF_INET;
-    addr.sin_addr.s_addr = htons(INADDR_ANY);
-    //addr.sin_addr.s_addr = htons(ip);
+    //addr.sin_addr.s_addr = htons(INADDR_ANY);
+    addr.sin_addr.s_addr = inet_addr(ip);
     addr.sin_port = htons(port);
 
     err = bind(server_sock, (struct sockaddr *) &addr, sizeof(addr));
@@ -143,12 +137,9 @@ void start_server(const char *ip, unsigned short port)
 
     listen(server_sock, 10);
 
-    Server *g_servers[SERVER_NUM] = {0};
-
-    for(int i=0; i < SERVER_NUM; i++)
-    {
-        g_servers[i] = create_server(server_sock);
-    }
+    
+    g_server = create_server(server_sock);
+ 
 
     return 0;
 }
@@ -156,13 +147,10 @@ void start_server(const char *ip, unsigned short port)
 void stop_server()
 {
     stop_timer();
-    stop_handlers();
+    //stop_handlers();
     destroy_sock_list();
 
     close(server_sock);
 
-    for(int i=0; i<SERVER_NUM; i++)
-    {
-        remove_server(g_servers[i]);
-    }
+    remove_server(g_server);
 }

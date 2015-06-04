@@ -14,7 +14,7 @@
 #include <time.h>
 #include "common.h"
 
-#define socknum 5000
+#define socknum 50
 #define loopnum 100000 
 int sockfds[socknum];
 

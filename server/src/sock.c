@@ -41,22 +41,24 @@ static inline void free_sock(void *data)
 
 inline void remove_sock(Sock *sock, bool left_in_list)
 {
+	printf("-- remove_sock 111 fd: %d efd: %d size: %d\n", sock->fd, sock->epoll_fd, sizeof(g_sock_fd_map));
 	g_sock_fd_map[sock->fd] = 0;
-
+printf("-- remove_sock 222\n");
 	if(sock->msg)
 	{
+		printf("-- remove_sock 333\n");
 		Free(sock->msg);
 	}
 	epoll_ctl(sock->epoll_fd, EPOLL_CTL_DEL, sock->fd, 0);
 	close(sock->fd);
-
+printf("-- remove_sock 444\n");
 	if(!left_in_list)
 	{
 		SAFE_LIST_REMOVE(g_sock_list, sock->list_node);	
 	}
 
+printf("-- remove_sock 333\n");
 	sock_num--;
-	printf("remove_sock: %d / %d\n", SAFE_LIST_SIZE(g_sock_list), sock_num);
 }
 
 inline SockMsg *create_recv_msg(Sock *sock)
@@ -67,9 +69,9 @@ inline SockMsg *create_recv_msg(Sock *sock)
 	memset(msg, 0, len_total);
 	msg->sock = sock;
 	*(int*)msg->data = *(int*)sock->head;
-	msg->data[2] = sock->head[2];
-	msg->data[3] = sock->head[3];
-	msg->len = len;// - PACK_HEAD_LEN;
+	//msg->data[2] = sock->head[2];
+	//msg->data[3] = sock->head[3];
+	msg->len = len;
 	msg->buf = msg->data + PACK_HEAD_LEN;
 	msg->count++;
 	
@@ -110,7 +112,7 @@ inline void msg_release(SockMsg *msg)
 	}
 }
 
-void init_sock_list()
+void create_sock_list()
 {
 	g_sock_list = SAFE_LIST_CREATE();
 	SAFE_LIST_INIT(g_sock_list, free_sock);
