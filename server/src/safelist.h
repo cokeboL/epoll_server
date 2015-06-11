@@ -50,10 +50,12 @@ typedef struct SafeList
 #define SAFE_LIST_CREATE() (SafeList*)Malloc(sizeof(SafeList))
 
 
-#define SAFE_LIST_INIT(list, handler)\
+#define SAFE_LIST_INIT(__safe_list, handler)\
+if(__safe_list)\
+{\
 do\
 {\
-SafeList *_tmp_list = (list);\
+SafeList *_tmp_list = (__safe_list);\
 SafeListNodeHandler _tmp_handler = (handler);\
 if (_tmp_list)\
 {\
@@ -64,22 +66,25 @@ _tmp_list->_sl_release_handler_ = (SafeListNodeHandler)_tmp_handler; \
 mutex_init(&_tmp_list->_sl_mutex_, 0);\
 }\
 }\
-while(0)
+while(0)\
+}
 
 
-#define SAFE_LIST_HEAD(list) (list->_sl_head_)
+#define SAFE_LIST_HEAD(__safe_list) ((__safe_list) ? (__safe_list->_sl_head_) : 0)
 
 
-#define SAFE_LIST_TAIL(list) (list->_sl_tail_)
+#define SAFE_LIST_TAIL(__safe_list) ((__safe_list) ? (__safe_list->_sl_tail_) : 0)
 
 
-#define SAFE_LIST_SIZE(list) (list->_sl_count_)
+#define SAFE_LIST_SIZE(__safe_list) ((__safe_list) ? (__safe_list->_sl_count_) : 0)
 
 
-#define SAFE_LIST_PUSH(list, value, list_node)\
+#define SAFE_LIST_PUSH(__safe_list, value, list_node)\
+if(__safe_list)\
+{\
 do\
 {\
-SafeList *_tmp_list = (list);\
+SafeList *_tmp_list = (__safe_list);\
 SafeListNode **_tmp_list_node = list_node;\
 void *_sl_value_ = (void*)(value);\
 mutex_lock(&_tmp_list->_sl_mutex_);\
@@ -104,13 +109,16 @@ if(_tmp_list_node)\
 *_tmp_list_node = _tmp_node;\
 }\
 mutex_unlock(&_tmp_list->_sl_mutex_);\
-} while (0)
+} while (0)\
+}
 
 
-#define SAFE_LIST_POP(list)\
+#define SAFE_LIST_POP(__safe_list)\
+if(__safe_list)\
+{\
 do\
 {\
-SafeList *_tmp_list = (list);\
+SafeList *_tmp_list = (__safe_list);\
 mutex_lock(&_tmp_list->_sl_mutex_);\
 if (_tmp_list->_sl_head_)\
 {\
@@ -129,13 +137,16 @@ Free(_tmp_tmp); \
 }\
 _tmp_list->_sl_count_--;\
 mutex_unlock(&_tmp_list->_sl_mutex_);\
-} while (0)
+} while (0)\
+}
 
 
-#define SAFE_LIST_REMOVE(list, node)\
+#define SAFE_LIST_REMOVE(__safe_list, node)\
+if(__safe_list)\
+{\
 do\
 {\
-SafeList *_tmp_list = (list);\
+SafeList *_tmp_list = (__safe_list);\
 SafeListNode *_tmp_node = (node);\
 mutex_lock(&_tmp_list->_sl_mutex_);\
 if (_tmp_node->_sl_pre_)\
@@ -169,13 +180,16 @@ _tmp_list->_sl_release_handler_(_tmp_node->_sl_data_); \
 Free(_tmp_node); \
 _tmp_list->_sl_count_--;\
 mutex_unlock(&_tmp_list->_sl_mutex_);\
-} while (0)
+} while (0)\
+}
 
 
-#define SAFE_LIST_REMOVE_IF(list, _tmp_rm_if)\
+#define SAFE_LIST_REMOVE_IF(__safe_list, _tmp_rm_if)\
+if(__safe_list)\
+{\
 do\
 {\
-SafeList *_tmp_list = (list);\
+SafeList *_tmp_list = (__safe_list);\
 mutex_lock(&_tmp_list->_sl_mutex_);\
 SafeListNode **_tmp_node = &_tmp_list->_sl_head_, *_tmp_entry; \
 while (*_tmp_node)\
@@ -201,13 +215,16 @@ _tmp_node = &_tmp_entry->_sl_next_; \
 }\
 }\
 mutex_unlock(&_tmp_list->_sl_mutex_);\
-} while (0)
+} while (0)\
+}
 
 
-#define SAFE_LIST_TRAVERSE(list, handler)\
+#define SAFE_LIST_TRAVERSE(__safe_list, handler)\
+if(__safe_list)\
+{\
 do\
 {\
-SafeList *_tmp_list = (list);\
+SafeList *_tmp_list = (__safe_list);\
 SafeListNodeHandler _tmp_handler = (handler);\
 mutex_lock(&_tmp_list->_sl_mutex_);\
 SafeListNode *_tmp_tmp = _tmp_list->_sl_head_; \
@@ -217,13 +234,16 @@ _tmp_handler(_tmp_tmp->_sl_data_); \
 _tmp_tmp = _tmp_tmp->_sl_next_; \
 }\
 mutex_unlock(&_tmp_list->_sl_mutex_);\
-} while (0)
+} while (0)\
+}
 
 
-#define SAFE_LIST_TRAVERSE2(list, handler)\
+#define SAFE_LIST_TRAVERSE2(__safe_list, handler)\
+if(__safe_list)\
+{\
 do\
 {\
-SafeList *_tmp_list = (list);\
+SafeList *_tmp_list = (__safe_list);\
 SafeListNodeHandler _tmp_handler = (handler);\
 mutex_lock(&_tmp_list->_sl_mutex_);\
 SafeListNode *_tmp_tmp = _tmp_list->_sl_tail_; \
@@ -233,13 +253,15 @@ _tmp_handler(_tmp_tmp->_sl_data_); \
 _tmp_tmp = _tmp_tmp->_sl_pre_; \
 }\
 mutex_unlock(&_tmp_list->_sl_mutex_);\
-} while (0)
+} while (0)\
+}\
 
 
-#define SAFE_LIST_DESTROY(list)\
+#define SAFE_LIST_DESTROY(__safe_list)\
 do\
 {\
-SafeList *_tmp_list = (list);\
+SafeList *_tmp_list = (__safe_list);\
+__safe_list = 0;\
 mutex_lock(&_tmp_list->_sl_mutex_);\
 SafeListNode *_tmp_curr = _tmp_list->_sl_head_, *_tmp_tmp;\
 while (_tmp_curr)\
